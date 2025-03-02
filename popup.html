@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MIAS Suite</title>
+
+  <style>
+    :root {
+      --primary: #6366f1; --secondary: #3b82f6; --success: #22c55e; --danger: #ef4444;
+      --info: #14b8a6; --background: #0f172a; --surface: #1e293b; --text: #f8fafc;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      width: 300px; min-height: 200px;
+      padding: 1rem; background: var(--background);
+      color: var(--text); -webkit-font-smoothing: antialiased;
+    }
+    
+    .container {
+      background: var(--background); border-radius: 1rem; padding: 1.5rem;
+      text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .author { color: #94a3b8; font-size: 0.75rem; margin-bottom: 1rem; }
+    
+    .btn-grid {
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem; 
+      margin: 1.25rem 0;
+    }
+    
+    .btn {
+      padding: 0.75rem; border: none; border-radius: 0.75rem;
+      font-weight: 600; cursor: pointer; transition: var(--transition);
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.5rem; background: var(--surface); color: var(--text);
+      position: relative; overflow: hidden;
+    }
+    
+    .btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.1), transparent);
+      opacity: 0; transition: var(--transition);
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .btn:hover::after { opacity: 1; }
+    
+    .btn-primary { background: linear-gradient(45deg, var(--primary), #4f46e5); }
+    .btn-secondary { background: linear-gradient(45deg, var(--secondary), #2563eb); }
+    .btn-success { background: linear-gradient(45deg, var(--success), #16a34a); }
+    .btn-danger { background: linear-gradient(45deg, var(--danger), #dc2626); }
+    .btn-info { background: linear-gradient(45deg, var(--info), #0d9488); }
+
+    #viewData {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+
+    #status, #patientCount {
+      font-size: 0.85rem; background: var(--surface); padding: 0.75rem;
+      border-radius: 0.75rem; display: flex; align-items: center;
+      justify-content: center; gap: 0.75rem; transition: var(--transition);
+      margin: 0.5rem 0; border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .icon {
+      width: 1.25rem; height: 1.25rem;
+      fill: currentColor; stroke: currentColor;
+    }
+
+    @media (max-width: 340px) {
+      body { padding: 0.75rem; }
+      .btn { padding: 0.6rem; font-size: 0.9rem; }
+      .btn-grid { gap: 0.5rem; }
+    }
+
+    .pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>MIAS Suite</h1>
+    <p class="author">Sundaresan Nithiyanandam</p>
+
+    <div class="btn-grid">
+      <button class="btn btn-primary" id="extractPatientData">
+        <svg class="icon" viewBox="0 0 256 256">
+          <use href="#ph-user-circle"></use>
+        </svg>
+        Patient
+      </button>
+      <button class="btn btn-secondary" id="extractTestData">
+        <svg class="icon" viewBox="0 0 256 256">
+          <use href="#ph-flask"></use>
+        </svg>
+        Test
+      </button>
+      <button class="btn btn-success" id="generateExcel">
+        <svg class="icon" viewBox="0 0 256 256">
+          <use href="#ph-file-xls"></use>
+        </svg>
+        Excel
+      </button>
+      <button class="btn btn-danger" id="clearData">
+        <svg class="icon" viewBox="0 0 256 256">
+          <use href="#ph-trash"></use>
+        </svg>
+        Clear
+      </button>
+      <button class="btn btn-info" id="viewData">
+        <svg class="icon" viewBox="0 0 256 256">
+          <use href="#ph-database"></use>
+        </svg>
+        View Data
+      </button>
+    </div>
+
+    <div id="status">
+      <svg class="icon" viewBox="0 0 256 256">
+        <use href="#ph-info"></use>
+      </svg>
+      Ready to extract data
+    </div>
+    <p id="patientCount">
+      <svg class="icon" viewBox="0 0 256 256">
+        <use href="#ph-users"></use>
+      </svg>
+      Patients: 0
+    </p>
+  </div>
+
+  <!-- Phosphor Icons Sprite Sheet -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+    <!-- User Circle -->
+    <symbol id="ph-user-circle" viewBox="0 0 256 256">
+      <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-144a32,32,0,1,1-32,32A32,32,0,0,1,120,72Zm64,96H72a8,8,0,0,1-6.88-12.12c7.73-13.11,21.65-19.88,38.88-19.88h32c17.23,0,31.15,6.77,38.88,19.88A8,8,0,0,1,184,168Z"/>
+    </symbol>
+
+    <!-- Flask -->
+    <symbol id="ph-flask" viewBox="0 0 256 256">
+      <path d="M222,96.67a16,16,0,0,0-5.17-11.78l-23.26-21.29.06-.09L161.9,34.42a4,4,0,0,0-7.15-3.47L142.89,48H113.11L97.25,30.95a4,4,0,0,0-7.15,3.47L62.37,63.51l.06.09L39.17,84.89A16,16,0,0,0,34,96.67,15.63,15.63,0,0,0,35.56,104L90,192v40a16,16,0,0,0,16,16h44a16,16,0,0,0,16-16V192l54.44-88A15.63,15.63,0,0,0,222,96.67ZM128,36.09l10.81,12h-21.62ZM128,120a12,12,0,0,1-12-12V96h24v12A12,12,0,0,1,128,120Zm32,72H96L44.34,99.22,66,79.1l27.43,31.3A28,28,0,0,0,104,116h48a28,28,0,0,0,10.57-5.6L190,79.1l21.66,20.12Z"/>
+    </symbol>
+
+    <!-- File XLS -->
+    <symbol id="ph-file-xls" viewBox="0 0 256 256">
+      <path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-45.54-48.85a8,8,0,0,1-1.32,11.21c-13.27,11-28.6,13.46-42.15,13.46a8,8,0,0,1,0-16c11.32,0,24.14-1.83,34.54-10.85a8,8,0,0,1,11.21,1.32Zm-64.79-1.32c10.4,9,23.22,10.85,34.54,10.85a8,8,0,0,0,0-16c-13.55,0-28.88-2.43-42.15-13.46a8,8,0,0,0-11.21,1.32,8,8,0,0,0,1.32,11.21Zm99.09-25.34-24,32a8,8,0,0,1-12.72,0l-24-32a8,8,0,0,1,12.72-9.54L160,147.58l14.54-19.39a8,8,0,0,1,12.72,9.54Z"/>
+    </symbol>
+
+    <!-- Trash -->
+    <symbol id="ph-trash" viewBox="0 0 256 256">
+      <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>
+    </symbol>
+
+    <!-- Database -->
+    <symbol id="ph-database" viewBox="0 0 256 256">
+      <path d="M128,24C74.76,24,32,41.14,32,62V194c0,20.86,42.76,38,96,38s96-17.14,96-38V62C224,41.14,181.24,24,128,24Zm80,138c0,9.93-28.66,26-80,26s-80-16.07-80-26V80.64C60.2,89.82,91.85,104,128,104s67.8-14.18,80-23.36ZM128,88c-51.34,0-80-16.07-80-26S76.66,36,128,36s80,16.07,80,26S179.34,88,128,88Z"/>
+    </symbol>
+
+    <!-- Info -->
+    <symbol id="ph-info" viewBox="0 0 256 256">
+      <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm-8,48a8,8,0,0,1,16,0v8a8,8,0,0,1-16,0Zm8,144a12,12,0,1,1,12-12A12,12,0,0,1,128,216Z"/>
+    </symbol>
+
+    <!-- Users -->
+    <symbol id="ph-users" viewBox="0 0 256 256">
+      <path d="M117.25,157.92a60,60,0,1,0-58.5,0A95.83,95.83,0,0,0,3.53,195.31a8,8,0,1,0,13.4,8.82C24.59,183.22,50.31,168,80,168s55.41,15.22,63.07,36.13a8,8,0,0,0,13.4-8.82A95.83,95.83,0,0,0,117.25,157.92ZM40,108a44,44,0,1,1,44,44A44.05,44.05,0,0,1,40,108Zm164.3,61.59a8,8,0,0,1,1.05-11.3,4,4,0,0,0,.65-5.37,60.09,60.09,0,0,0-5.58-7.14,56,56,0,1,0-11.28,11.28,75.87,75.87,0,0,1,15,15,8,8,0,0,1-11.3,1.05ZM192,108a40,40,0,1,1-40-40A40,40,0,0,1,192,108Z"/>
+    </symbol>
+  </svg>
+  <script src="libs/xlsx.full.min.js"></script>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

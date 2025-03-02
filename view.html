@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIAS Suite - Stored Data</title>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --background: #0f172a;
+            --surface: rgba(30, 41, 59, 0.8);
+            --text: #f8fafc;
+            --border: rgba(51, 65, 85, 0.4);
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body { 
+            padding: 2.5rem;
+            background: var(--background); 
+            color: var(--text);
+            min-height: 100vh;
+            backdrop-filter: blur(20px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 120px;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+
+        h1 { 
+            font-size: 2.5rem; 
+            font-weight: 800; 
+            margin-bottom: 0.25rem;
+            background: linear-gradient(45deg, #e2e8f0 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+
+        .author { 
+            font-size: 0.9rem; 
+            color: #94a3b8; 
+            display: block;
+            opacity: 0.9;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: #e2e8f0;
+            position: relative;
+            padding-left: 1rem;
+        }
+
+        h2::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: var(--surface); 
+            border-radius: 16px; 
+            overflow: hidden; 
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+            margin: 1.5rem 0;
+            transition: transform 0.3s ease;
+        }
+
+        table:hover {
+            transform: translateY(-2px);
+        }
+
+        th, td { 
+            padding: 1.25rem 2rem; 
+            text-align: left; 
+            position: relative;
+        }
+
+        th { 
+            background: var(--surface); /* Removed gradient */
+            font-weight: 600;
+            letter-spacing: 0.25px;
+            color: #e2e8f0;
+            backdrop-filter: blur(8px);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        tr {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        tr:not(:last-child) td {
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        td {
+            position: relative;
+        }
+
+        tr:hover td::before {
+            opacity: 1;
+        }
+
+
+        .delete-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .delete-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--danger);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            color: white;
+            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.25);
+            transform: scale(1.05);
+        }
+
+        .delete-btn:hover::before {
+            opacity: 1;
+        }
+
+        .delete-btn svg {
+            width: 18px;
+            height: 18px;
+            position: relative;
+            z-index: 1;
+            transition: transform 0.3s ease;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: var(--glass);
+            backdrop-filter: blur(4px);
+        }
+
+        .status.completed {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+        }
+
+        .status.pending {
+            background: rgba(234, 179, 8, 0.15);
+            color: #eab308;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1.5rem;
+            }
+            
+            th, td {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        table {
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        .date {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        /* Add sorting arrow styling */
+        .sort-arrow {
+            margin-left: 8px;
+            transition: transform 0.3s ease;
+        }
+        
+        .sorted-desc .sort-arrow {
+            transform: rotate(180deg);
+        }
+    </style>
+    <script src="view.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MIAS Suite</h1>
+            <span class="author">Sundaresan Nithiyanandam</span>
+        </div>
+        
+        <h2>Patient Test Records</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th id="sortBtn">S.No. <span class="sort-arrow">↓</span></th>
+                    <th>PID</th>
+                    <th>Patient Name</th>
+                    <th>Test Name</th>
+                    <th>Result</th>
+                    <th>Approved On</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="dataBody">
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

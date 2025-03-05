@@ -70,6 +70,6 @@ This project is licensed under the **MIT License**.
 ---
 
 ### 🎯 Future Improvements  
-🚀 Add **auto-scheduling** for periodic Sorage cleanup  
+🚀 Add **auto-scheduling** for periodic Storage cleanup  
 🚀 Enhance **Google Drive file organization**  
 🚀 Implement **AI-based test result analysis**  

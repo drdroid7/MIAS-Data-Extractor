@@ -151,53 +151,6 @@ function extractPatientData() {
     }
 }
 
-// Define TestPanels
-const testPanels = {
-    "Electrolytes Panel": [
-        "Electrolytes - Serum Sodium",
-        "Electrolytes - Serum Potassium",
-        "Electrolytes - Serum Chloride",
-        "Electrolytes - Serum Bi-carbonate"
-    ],
-    "Renal Function Test (RFT) Panel": [
-        "RENAL FUNCTION TEST (RFT) - Uric acid",
-        "RENAL FUNCTION TEST (RFT) - Creatinine",
-        "RENAL FUNCTION TEST (RFT) - Urea"
-    ],
-    "Liver Function Test (LFT) Panel": [
-        "Liver Function Test - Gamma-glutamy Transferase (GGT)",
-        "Liver Function Test - Albumin",
-        "Liver Function Test - ALKP",
-        "Liver Function Test - ALTV",
-        "Liver Function Test - AST",
-        "Liver Function Test - Total Protein",
-        "Liver Function Test - Direct Bilirubin",
-        "Liver Function Test - Total Bilirubin"
-    ],
-    "Thyroid Panel": [
-        "Free T3, T4 & TSH - (F-T3) FREE TRIIODOTHYRONINE",
-        "Free T3, T4 & TSH - (F-T4) FREE THYROXINE",
-        "Free T3, T4 & TSH - (TSH) THYROID STIMULATING"
-    ],
-    "Lipid Profile Panel": [
-        "Lipid Profile - Cholesterol (Total)",
-        "Lipid Profile - HDL Cholesterol (Direct)",
-        "Lipid Profile - LDL Cholesterol (Direct)",
-        "Lipid Profile - Triglycerides",
-        "Lipid Profile - VLDL Cholesterol",
-        "Lipid Profile - Total Cholesterol /HDL Ratio"
-    ],
-    "Pancreas Profile Panel": [
-        "PANCREAS PROFILE - Amylase",
-        "PANCREAS PROFILE - Lipase"
-    ],
-    "Fertility Hormones Panel": [
-        "FERTILITY HORMONES - Prolactin",
-        "FERTILITY HORMONES - FSH",
-        "FERTILITY HORMONES - LH"
-    ]
-};
-
 // Function to extract test data
 function extractTestData() {
     console.log("Extracting test data...");

@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusDiv.textContent = message;
         statusDiv.className = type;
     }
+	
 
     // Export to Excel
     async function exportToExcel(data) {

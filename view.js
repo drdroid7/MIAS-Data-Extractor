@@ -23,13 +23,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Create worksheet with column order
-            const ws = XLSX.utils.json_to_sheet(combinedData, {
-                header: ["Age", "Gender", "Mobile", "Name", "PID", "ApprovedOn", "ResultValue", "TestName"]
-            });
-
+            // Create a worksheet and workbook
+            const ws = XLSX.utils.json_to_sheet(combinedData);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Patient Data');
+
+            // Download the Excel file
             XLSX.writeFile(wb, `PatientData_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`);
 
             console.log("Excel file downloaded successfully!");
@@ -48,36 +47,36 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // Combine patient and test data for Excel export
+    // Combine patient and test data for Excel export - MODIFIED FUNCTION
     function combinePatientAndTestData(patientRecords) {
         return patientRecords.flatMap((patient) => {
-            const baseData = {
-                Age: patient.Age || "-",
-                Gender: patient.Gender || "-",
-                Mobile: patient.Mobile || "-",
-                Name: patient.Name,
-                PID: patient.PID
-            };
-
             if (patient.Tests.length === 0) {
                 return [{
-                    ...baseData,
+                    Age: patient.Age || "-",
+                    Gender: patient.Gender || "-",
+                    Mobile: patient.Mobile || "-",
+                    Name: patient.Name || "-",
+                    PID: patient.PID || "-",
                     ApprovedOn: "-",
                     ResultValue: "-",
                     TestName: "-"
                 }];
+            } else {
+                return patient.Tests.map((test) => ({
+                    Age: patient.Age || "-",
+                    Gender: patient.Gender || "-",
+                    Mobile: patient.Mobile || "-",
+                    Name: patient.Name || "-",
+                    PID: patient.PID || "-",
+                    ApprovedOn: test.ApprovedOn || "-",
+                    ResultValue: test.ResultValue || "-",
+                    TestName: test.TestName || "-"
+                }));
             }
-
-            return patient.Tests.map((test) => ({
-                ...baseData,
-                ApprovedOn: test.ApprovedOn || "-",
-                ResultValue: test.ResultValue,
-                TestName: test.TestName
-            }));
         });
     }
 
-    // Load patient data into the table (existing unchanged functionality)
+    // Load patient data into the table
     function loadPatientData() {
         console.log("Loading patient data...");
 
@@ -91,6 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             result.patientRecords.forEach((patient, patientIndex) => {
                 if (patient.Tests.length === 0) {
+                    // ✅ Display patient even if no tests are available + Add delete button
                     allRows.push({
                         entryIndex: allRows.length,
                         PID: patient.PID,
@@ -100,9 +100,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         ApprovedOn: "-",
                         patientIndex,
                         testIndex: null,
-                        isPatientRow: true,
+                        isPatientRow: true, // Mark as a patient-only row
                     });
                 } else {
+                    // ✅ Add test records under the same patient
                     patient.Tests.forEach((test, testIndex) => {
                         allRows.push({
                             entryIndex: allRows.length,
@@ -124,8 +125,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Sort records
+            // Sort records (default: newest first)
             allRows.sort((a, b) => (sortDescending ? b.entryIndex - a.entryIndex : a.entryIndex - b.entryIndex));
+            console.log("Sorted records:", allRows);
 
             allRows.forEach((entry, index) => {
                 let row = tableBody.insertRow();
@@ -137,73 +139,101 @@ document.addEventListener("DOMContentLoaded", function () {
                     <td>${entry.ResultValue}</td>
                     <td>${entry.ApprovedOn}</td>
                     <td>
-                        ${entry.isPatientRow ?
-                            `<button class="delete-patient-btn" data-patient="${entry.patientIndex}" title="Delete Patient">🗑️</button>` :
-                            `<button class="delete-btn" data-patient="${entry.patientIndex}" data-test="${entry.testIndex}" title="Delete Test">🗑️</button>`
+                        ${
+                            entry.isPatientRow
+                                ? `<button class="delete-patient-btn" data-patient="${entry.patientIndex}" title="Delete Patient">🗑️</button>`
+                                : `<button class="delete-btn" data-patient="${entry.patientIndex}" data-test="${entry.testIndex}" title="Delete Test">🗑️</button>`
                         }
                     </td>
                 `;
             });
 
-            // Attach delete handlers
-            document.querySelectorAll(".delete-btn").forEach(button => {
-                button.addEventListener("click", function() {
-                    const patientIndex = parseInt(this.dataset.patient);
-                    const testIndex = parseInt(this.dataset.test);
+            // Attach delete event for test rows
+            document.querySelectorAll(".delete-btn").forEach((button) => {
+                button.addEventListener("click", function () {
+                    let patientIndex = parseInt(this.getAttribute("data-patient"));
+                    let testIndex = parseInt(this.getAttribute("data-test"));
+
+                    console.log(`Delete test clicked - Patient Index: ${patientIndex}, Test Index: ${testIndex}`);
                     deleteTestRecord(patientIndex, testIndex);
                 });
             });
 
-            document.querySelectorAll(".delete-patient-btn").forEach(button => {
-                button.addEventListener("click", function() {
-                    const patientIndex = parseInt(this.dataset.patient);
+            // Attach delete event for patient-only rows
+            document.querySelectorAll(".delete-patient-btn").forEach((button) => {
+                button.addEventListener("click", function () {
+                    let patientIndex = parseInt(this.getAttribute("data-patient"));
+
+                    console.log(`Delete patient clicked - Patient Index: ${patientIndex}`);
                     deletePatientRecord(patientIndex);
                 });
             });
         });
     }
 
-    // Existing delete functionality
     function deleteTestRecord(patientIndex, testIndex) {
+        console.log(`Deleting test record - Patient Index: ${patientIndex}, Test Index: ${testIndex}`);
+
         chrome.storage.local.get({ patientRecords: [] }, (result) => {
-            const patientRecords = result.patientRecords;
+            let patientRecords = result.patientRecords;
             if (patientRecords[patientIndex]) {
                 patientRecords[patientIndex].Tests.splice(testIndex, 1);
+
+                // ✅ Remove patient if no tests remain
                 if (patientRecords[patientIndex].Tests.length === 0) {
                     patientRecords.splice(patientIndex, 1);
                 }
+
+                console.log("Updated patient records after test deletion:", patientRecords);
                 chrome.storage.local.set({ patientRecords }, loadPatientData);
             }
         });
     }
 
     function deletePatientRecord(patientIndex) {
+        console.log(`Deleting patient record - Patient Index: ${patientIndex}`);
+
         chrome.storage.local.get({ patientRecords: [] }, (result) => {
-            const patientRecords = result.patientRecords;
+            let patientRecords = result.patientRecords;
+
             if (patientRecords[patientIndex]) {
-                patientRecords.splice(patientIndex, 1);
+                patientRecords.splice(patientIndex, 1); // Remove patient completely
+                console.log("Updated patient records after patient deletion:", patientRecords);
                 chrome.storage.local.set({ patientRecords }, loadPatientData);
             }
         });
     }
 
-    // Existing sorting functionality
-    document.getElementById("sortBtn").addEventListener("click", function() {
+    // Sorting button click event
+    document.getElementById("sortBtn").addEventListener("click", function () {
         sortDescending = !sortDescending;
         this.textContent = sortDescending ? "S.No. 🔽" : "S.No. 🔼";
+        console.log("Sorting order changed. New order:", sortDescending ? "Descending (Newest First)" : "Ascending (Oldest First)");
         loadPatientData();
     });
 
-    // Existing message listeners
-    chrome.runtime.onMessage.addListener((request) => {
-        if (request.type === "refreshViewData") loadPatientData();
+    // ✅ Listen for "Clear Data" event and update the live page
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === "refreshViewData") {
+            console.log("Refreshing view data...");
+            loadPatientData();
+        } else if (request.type === "clearLiveData") {
+            console.log("Clearing live data...");
+            chrome.storage.local.set({ patientRecords: [] }, loadPatientData);
+        }
     });
 
-    chrome.storage.onChanged.addListener(() => loadPatientData());
+    // Auto-refresh data when storage changes
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+        console.log("Storage changes detected in:", areaName, changes);
+        loadPatientData();
+    });
 
-    // Initialize export button
-    document.getElementById("exportExcelBtn")?.addEventListener("click", exportToExcel);
+    // Attach export to Excel functionality to the button
+    const exportExcelBtn = document.getElementById("exportExcelBtn");
+    if (exportExcelBtn) {
+        exportExcelBtn.addEventListener("click", exportToExcel);
+    }
 
-    // Initial load
-    loadPatientData();
+    loadPatientData(); // Load data on page load
 });

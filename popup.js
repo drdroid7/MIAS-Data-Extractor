@@ -1,107 +1,98 @@
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Popup loaded");
 
-    // Initialize IndexedDB
-    let db;
-    const DB_NAME = "BiochemicalDataDB";
-    const STORE_NAME = "patientRecords";
+    // Get UI elements
+    const extractPatientDataBtn = document.getElementById('extractPatientData');
+    const extractTestDataBtn = document.getElementById('extractTestData');
+    const generateExcelBtn = document.getElementById('generateExcel');
+    const clearDataBtn = document.getElementById('clearData');
+    const statusDiv = document.getElementById('status');
+    const patientCountElement = document.getElementById('patientCount');
+    const viewDataBtn = document.getElementById("viewData");
 
-    async function initDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, 1);
-
-            request.onupgradeneeded = (event) => {
-                db = event.target.result;
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME, { keyPath: "PID" });
-                }
-            };
-
-            request.onsuccess = (event) => {
-                db = event.target.result;
-                resolve(db);
-            };
-
-            request.onerror = (event) => {
-                console.error("Error opening IndexedDB:", event.target.error);
-                reject(event.target.error);
-            };
+    // Initialize View Data button
+    if (viewDataBtn) {
+        viewDataBtn.addEventListener("click", () => {
+            chrome.tabs.create({ url: chrome.runtime.getURL("view.html") });
         });
-    }
-
-    // Get all patient records from IndexedDB
-    async function getAllPatientRecords() {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], "readonly");
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.getAll();
-
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = (event) => reject(event.target.error);
-        });
-    }
-
-    // Clear all data from IndexedDB
-    async function clearData() {
-        return new Promise((resolve, reject) => {
-            const transaction = db.transaction([STORE_NAME], "readwrite");
-            const store = transaction.objectStore(STORE_NAME);
-            const request = store.clear();
-
-            request.onsuccess = () => resolve();
-            request.onerror = (event) => reject(event.target.error);
-        });
-    }
-
-    // Update UI with patient count
-    async function updatePatientCount() {
-        const patientRecords = await getAllPatientRecords();
-        const patientCountElement = document.getElementById('patientCount');
-        if (patientCountElement) {
-            patientCountElement.textContent = `Patients: ${patientRecords.length}`;
-        }
-    }
-
-    // Set loading state
-    function setLoading(isLoading, message = "") {
-        extractPatientDataBtn.disabled = isLoading;
-        extractTestDataBtn.disabled = isLoading;
-        generateExcelBtn.disabled = isLoading;
-        clearDataBtn.disabled = isLoading;
-        if (message) setStatus(message, "loading");
-    }
-
-    // Set status message
-    function setStatus(message, type) {
-        const statusDiv = document.getElementById('status');
-        if (statusDiv) {
-            statusDiv.textContent = message;
-            statusDiv.className = type;
-        }
-    }
-
-    // Combine patient and test data for Excel export
-    function combinePatientAndTestData(patientData, testData) {
-        return patientData.flatMap(patient => {
-            const tests = testData.filter(test => test.PID === patient.PID);
-            return tests.length ? tests.map(test => ({ ...patient, ...test })) : [patient];
-        });
-    }
-
-    // Export data to Excel
-    async function exportToExcel(data) {
-        if (typeof XLSX === 'undefined') {
-            console.error("XLSX library is not loaded.");
-            return;
-        }
-
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Data');
-        XLSX.writeFile(wb, `PatientData_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`);
+        console.log("View Data button initialized.");
+    } else {
+        console.error("View Data button not found in popup.html!");
     }
 
     // Inject buttons into the webpage
+    injectButtonsIntoPage();
+
+    // Ensure all async functions execute properly
+    await updateStatusMessage();
+    await updatePatientCount();
+
+    // Extract patient data
+    extractPatientDataBtn.addEventListener('click', async () => {
+        console.log("Extract Patient Data button clicked");
+        await executeContentScriptAndExtract("extractData");
+    });
+
+    // Extract test data
+    extractTestDataBtn.addEventListener('click', async () => {
+        console.log("Extract Test Data button clicked");
+        await executeContentScriptAndExtract("extractTestData");
+    });
+
+    // Generate Excel file
+    generateExcelBtn.addEventListener('click', async () => {
+        console.log("Generate Excel button clicked");
+        setLoading(true, "Generating Excel file...");
+
+        try {
+            const storedData = await chrome.storage.local.get(['patientData', 'testData']);
+            const patientData = storedData.patientData || [];
+            const testData = storedData.testData || [];
+            const combinedData = combinePatientAndTestData(patientData, testData);
+
+            if (!combinedData.length) throw new Error("No data to export");
+
+            await exportToExcel(combinedData);
+            setStatus("Excel file downloaded successfully!", "success");
+        } catch (error) {
+            console.error("Export failed:", error);
+            setStatus(`Error: ${error.message}`, "error");
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    // Clear stored data & update live page
+    clearDataBtn.addEventListener('click', async () => {
+        console.log("Clear Data button clicked");
+        setLoading(true, "Clearing data...");
+
+        try {
+            // Remove stored data
+            await chrome.storage.local.remove(['patientData', 'testData']);
+            console.log("Data cleared from Chrome Storage");
+
+            // Send message to `view.html` to refresh the table
+            chrome.runtime.sendMessage({ type: "refreshViewData" });
+
+            // Send message to clear live page data
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                await chrome.tabs.sendMessage(tab.id, { type: "clearLiveData" });
+            }
+
+            setStatus("Data cleared successfully!", "success");
+            await updateStatusMessage();
+            await updatePatientCount();
+        } catch (error) {
+            console.error("Clear failed:", error);
+            setStatus(`Error: ${error.message}`, "error");
+        } finally {
+            setLoading(false);
+        }
+    });
+
+    // Inject buttons into the page
     function injectButtonsIntoPage() {
         console.log("Injecting buttons into the webpage...");
 
@@ -153,69 +144,67 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Initialize DB and load data
-    await initDB();
-    await updatePatientCount();
-
-    // Get UI elements
-    const extractPatientDataBtn = document.getElementById('extractPatientData');
-    const extractTestDataBtn = document.getElementById('extractTestData');
-    const generateExcelBtn = document.getElementById('generateExcel');
-    const clearDataBtn = document.getElementById('clearData');
-    const viewDataBtn = document.getElementById('viewData');
-
-    // Extract patient data
-    extractPatientDataBtn.addEventListener('click', async () => {
-        console.log("Extract Patient Data button clicked");
-        await executeContentScriptAndExtract("extractData");
-    });
-
-    // Extract test data
-    extractTestDataBtn.addEventListener('click', async () => {
-        console.log("Extract Test Data button clicked");
-        await executeContentScriptAndExtract("extractTestData");
-    });
-
-    // Generate Excel file
-    generateExcelBtn.addEventListener('click', async () => {
-        console.log("Generate Excel button clicked");
-        setLoading(true, "Generating Excel file...");
-
-        try {
-            const patientRecords = await getAllPatientRecords();
-            if (!patientRecords.length) throw new Error("No data to export");
-
-            await exportToExcel(patientRecords);
-            setStatus("Excel file downloaded successfully!", "success");
-        } catch (error) {
-            console.error("Export failed:", error);
-            setStatus(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    // Clear stored data
-    clearDataBtn.addEventListener('click', async () => {
-        console.log("Clear Data button clicked");
-        setLoading(true, "Clearing data...");
-
-        try {
-            await clearData();
-            setStatus("Data cleared successfully!", "success");
-            await updatePatientCount();
-        } catch (error) {
-            console.error("Clear failed:", error);
-            setStatus(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    // View Data button
-    if (viewDataBtn) {
-        viewDataBtn.addEventListener('click', () => {
-            chrome.tabs.create({ url: chrome.runtime.getURL("view.html") });
+    // Combine patient and test data
+    function combinePatientAndTestData(patientData, testData) {
+        return patientData.flatMap(patient => {
+            const tests = testData.filter(test => test.PID === patient.PID);
+            return tests.length ? tests.map(test => ({ ...patient, ...test })) : [patient];
         });
+    }
+
+    // Update patient count
+    async function updatePatientCount() {
+        const storedData = await chrome.storage.local.get('patientData');
+        const patientData = storedData.patientData || [];
+        if (patientCountElement) {
+            patientCountElement.textContent = `Number of Patients: ${patientData.length}`;
+        } else {
+            console.warn("patientCountElement not found in DOM.");
+        }
+    }
+
+    // Update status message
+    async function updateStatusMessage() {
+        const storedData = await chrome.storage.local.get(['patientData', 'testData']);
+        const patientData = storedData.patientData || [];
+        const testData = storedData.testData || [];
+
+        if (patientData.length && testData.length) {
+            setStatus("Full data extracted and available.", "success");
+        } else if (patientData.length) {
+            setStatus("Patient data extracted, test data missing.", "warning");
+        } else if (testData.length) {
+            setStatus("Test data extracted, patient data missing.", "warning");
+        } else {
+            setStatus("No data extracted yet.", "info");
+        }
+    }
+
+    // Set loading state
+    function setLoading(isLoading, message = "") {
+        extractPatientDataBtn.disabled = isLoading;
+        extractTestDataBtn.disabled = isLoading;
+        generateExcelBtn.disabled = isLoading;
+        clearDataBtn.disabled = isLoading;
+        if (message) setStatus(message, "loading");
+    }
+
+    // Set status message
+    function setStatus(message, type) {
+        statusDiv.textContent = message;
+        statusDiv.className = type;
+    }
+
+    // Export to Excel
+    async function exportToExcel(data) {
+        if (typeof XLSX === 'undefined') {
+            console.error("XLSX library is not loaded.");
+            return;
+        }
+
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Data');
+        XLSX.writeFile(wb, `PatientData_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`);
     }
 });

@@ -5,6 +5,7 @@
     "description": "Extract biochemical test data from a protected website and store it in an Excel file.",
     "permissions": [
         "storage",
+		"unlimitedStorage",
         "scripting",
         "activeTab"
     ],

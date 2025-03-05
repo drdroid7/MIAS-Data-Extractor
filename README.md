@@ -10,7 +10,6 @@
 **MIAS Suite** is a **Chrome extension** designed to automate **biochemical test data extraction** from a password-protected medical website. It ensures **efficient storage**, **intelligent test panel handling**, and **seamless Excel export** while maintaining an intuitive UI/UX.  
 
 🔹 **Extract patient and test data with one click**  
-🔹 **IndexedDB storage** for enhanced performance  
 🔹 **Hybrid data export** – Excel & Google Drive integration  
 
 ---
@@ -21,7 +20,7 @@
 ✔️ Click **'Extract Patient Data'** to capture **Patient Name & PID**  
 ✔️ Click **'Extract Test Data'** to extract **Test Name, Result Value & Approved On**  
 
-### 📂 Efficient Storage with IndexedDB  
+### 📂 Efficient Storage with Chrome Local Storage  
 ✔️ **Stores extracted data locally** for faster retrieval  
 ✔️ **Prevents performance lag** with periodic data flushing  
 
@@ -53,7 +52,7 @@
 1️⃣ **Navigate to the medical website**  
 2️⃣ Click **'Extract Patient Data'** → Saves **Patient Name & PID**  
 3️⃣ Click **'Extract Test Data'** → Saves **Test Name, Result & Approved On**  
-4️⃣ **Data is securely stored in IndexedDB**  
+4️⃣ **Data is securely stored in Chrome Local Storage**  
 5️⃣ Export data as **Excel file** or **upload to Google Drive**  
 
 ---
@@ -71,6 +70,6 @@ This project is licensed under the **MIT License**.
 ---
 
 ### 🎯 Future Improvements  
-🚀 Add **auto-scheduling** for periodic IndexedDB cleanup  
+🚀 Add **auto-scheduling** for periodic Sorage cleanup  
 🚀 Enhance **Google Drive file organization**  
 🚀 Implement **AI-based test result analysis**  

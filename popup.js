@@ -1,7 +1,64 @@
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Popup loaded");
 
-    // Get UI elements
+    // Function to show dark-themed toast notifications
+    function showToast(message, type = "info") {
+        console.log(`Showing toast: ${message}`);
+        const toast = document.createElement('div');
+        
+        // Create icon element
+        const icon = document.createElement('span');
+        icon.textContent = type === "error" ? '❌' : type === "success" ? '✅' : 'ℹ️';
+        icon.style.marginRight = '8px';
+        
+        // Create message element
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+        
+        // Append icon and message to toast
+        toast.appendChild(icon);
+        toast.appendChild(messageSpan);
+
+        // Toast styling
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = type === "error" ? '#d32f2f' : type === "success" ? '#388e3c' : '#323232';
+        toast.style.color = '#fff';
+        toast.style.padding = '12px 24px';
+        toast.style.borderRadius = '12px';
+        toast.style.fontFamily = '"Segoe UI", Arial, sans-serif';
+        toast.style.fontSize = '14px';
+        toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+        toast.style.zIndex = '10000';
+        toast.style.opacity = '0';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        
+        // Animation for sliding in from top
+        toast.style.transition = 'all 0.3s ease-in-out';
+        toast.style.transform = 'translate(-50%, -20px)'; // Start slightly above
+
+        document.body.appendChild(toast);
+
+        // Fade in and slide down
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+        }, 10);
+
+        // Auto-remove after 2 seconds with fade out and slide up
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -20px)';
+            setTimeout(() => {
+                toast.remove();
+            }, 300); // Matches transition duration (0.3s = 300ms)
+        }, 2000); // Reduced to 2 seconds
+    }
+
+    // Get UI elements first
     const extractPatientDataBtn = document.getElementById('extractPatientData');
     const extractTestDataBtn = document.getElementById('extractTestData');
     const generateExcelBtn = document.getElementById('generateExcel');
@@ -9,6 +66,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     const statusDiv = document.getElementById('status');
     const patientCountElement = document.getElementById('patientCount');
     const viewDataBtn = document.getElementById("viewData");
+
+    // Clear stored data & update live page
+    clearDataBtn.addEventListener('click', async () => {
+        console.log("Clear Data button clicked");
+        setLoading(true, "Clearing data...");
+
+        try {
+            // Remove stored data
+            await chrome.storage.local.remove(['patientData', 'testData', 'patientRecords']);
+            console.log("Data cleared from Chrome Storage");
+
+            // Send message to `view.html` to refresh the table
+            chrome.runtime.sendMessage({ type: "refreshViewData" });
+
+            // Send message to clear live page data
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab) {
+                await chrome.tabs.sendMessage(tab.id, { type: "clearLiveData" });
+            }
+
+            showToast("Data cleared successfully!", "success");
+            await updateStatusMessage();
+            await updatePatientCount();
+        } catch (error) {
+            console.error("Clear failed:", error);
+            showToast(`Error: ${error.message}`, "error");
+        } finally {
+            setLoading(false);
+        }
+    });
 
     // Initialize View Data button
     if (viewDataBtn) {
@@ -53,40 +140,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!combinedData.length) throw new Error("No data to export");
 
             await exportToExcel(combinedData);
-            setStatus("Excel file downloaded successfully!", "success");
+            showToast("Excel file downloaded successfully!", "success");
         } catch (error) {
             console.error("Export failed:", error);
-            setStatus(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    // Clear stored data & update live page
-    clearDataBtn.addEventListener('click', async () => {
-        console.log("Clear Data button clicked");
-        setLoading(true, "Clearing data...");
-
-        try {
-            // Remove stored data
-            await chrome.storage.local.remove(['patientData', 'testData']);
-            console.log("Data cleared from Chrome Storage");
-
-            // Send message to `view.html` to refresh the table
-            chrome.runtime.sendMessage({ type: "refreshViewData" });
-
-            // Send message to clear live page data
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab) {
-                await chrome.tabs.sendMessage(tab.id, { type: "clearLiveData" });
-            }
-
-            setStatus("Data cleared successfully!", "success");
-            await updateStatusMessage();
-            await updatePatientCount();
-        } catch (error) {
-            console.error("Clear failed:", error);
-            setStatus(`Error: ${error.message}`, "error");
+            showToast(`Error: ${error.message}`, "error");
         } finally {
             setLoading(false);
         }
@@ -132,13 +189,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await chrome.tabs.sendMessage(tab.id, { type });
             if (response?.error) throw new Error(response.error);
 
-            setStatus(`${type === "extractData" ? "Patient" : "Test"} data extracted successfully!`, "success");
+            showToast(`${type === "extractData" ? "Patient" : "Test"} data extracted successfully!`, "success");
 
             if (type === "extractData") await updatePatientCount();
             await updateStatusMessage();
         } catch (error) {
             console.error("Extraction failed:", error);
-            setStatus(`Error: ${error.message}`, "error");
+            showToast(`Error: ${error.message}`, "error");
         } finally {
             setLoading(false);
         }
@@ -194,7 +251,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         statusDiv.textContent = message;
         statusDiv.className = type;
     }
-	
 
     // Export to Excel
     async function exportToExcel(data) {

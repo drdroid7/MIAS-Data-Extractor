@@ -10,7 +10,7 @@
         "activeTab"
     ],
     "host_permissions": [
-        "<all_urls>"
+        "https://mias.smc.saveetha.com/*"
     ],
     "background": {
         "service_worker": "background.js"
@@ -25,7 +25,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
+            "matches": ["https://mias.smc.saveetha.com/*"],
             "js": ["content.js", "popup.js", "view.js"],
             "run_at": "document_idle"
         }
@@ -33,7 +33,7 @@
     "web_accessible_resources": [
         {
             "resources": ["content.js", "popup.js", "view.js"],
-            "matches": ["<all_urls>"]
+            "matches": ["https://mias.smc.saveetha.com/*"]
         }
     ],
     "icons": {

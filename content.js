@@ -1,17 +1,87 @@
 console.log("Content script loaded.");
 
-// Function to create and insert buttons with improved UI and icons
+// ======================= Toast Notification =======================
+function showToast(message, type = 'success') {
+    console.log(`Showing toast: ${message}`);
+    const bgColor = type === 'success' ? '#4CAF50' : '#f44336';
+    const iconPath = type === 'success' ? 
+        'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' : 
+        'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z';
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translate(-50%, -100%);
+        background-color: ${bgColor};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 14px;
+        box-shadow: 0 4px 6px rgb(0 0 0 / 20%);
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    `;
+
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('width', '20');
+    icon.setAttribute('height', '20');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.innerHTML = `<path fill="white" d="${iconPath}"/>`;
+
+    const iconContainer = document.createElement('div');
+    iconContainer.style.cssText = `
+        background: ${bgColor};
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px;
+    `;
+    iconContainer.appendChild(icon);
+
+    const messageElement = document.createElement('span');
+    messageElement.textContent = message;
+
+    const contentContainer = document.createElement('div');
+    contentContainer.style.display = 'flex';
+    contentContainer.style.alignItems = 'center';
+    contentContainer.style.gap = '12px';
+    contentContainer.appendChild(iconContainer);
+    contentContainer.appendChild(messageElement);
+
+    toast.appendChild(contentContainer);
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translate(-50%, 0)';
+    }, 0);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translate(-50%, -100%)';
+        setTimeout(() => toast.remove(), 150);
+    }, 1000);
+}
+
+// ======================= Button Creation =======================
 function createButton(id, text, iconClass, parentSelector, onClickFunction, bgColor, textColor = "white", centerAlign = false) {
     console.log(`Creating button "${id}" in selector "${parentSelector}"...`);
     const parentElement = document.querySelector(parentSelector);
     if (parentElement && !document.getElementById(id)) {
-        // Center the button if needed
         if (centerAlign) {
             parentElement.style.textAlign = "center";
         }
         const button = document.createElement("button");
         button.id = id;
-        // Add icon and text. Make sure there's a space between the icon and the text.
         button.innerHTML = `<i class="${iconClass}" style="margin-right: 6px;"></i>${text}`;
         button.style.cssText = `
             background-color: ${bgColor}; 
@@ -45,7 +115,7 @@ function createButton(id, text, iconClass, parentSelector, onClickFunction, bgCo
     }
 }
 
-// Function to darken the button color slightly on hover
+// ======================= Darken Button Color =======================
 function darkenColor(hex, percent) {
     console.log(`Darkening color ${hex} by ${percent}%`);
     let num = parseInt(hex.replace("#", ""), 16),
@@ -60,7 +130,7 @@ function darkenColor(hex, percent) {
     return darkenedColor;
 }
 
-// Function to extract patient data
+// ======================= Extract Patient Data =======================
 function extractPatientData() {
     console.log("Extracting patient data...");
     const patientName = document.querySelector('#dvoldpatient > div > div > div.user-details > p:nth-child(2) > strong');
@@ -143,15 +213,25 @@ function extractPatientData() {
         chrome.runtime.sendMessage({ type: "savePatientData", data: patientData }, (response) => {
             console.log("Response from runtime.sendMessage:", response);
             console.log("Patient data saved:", patientData);
-            alert(response.status);
+            showToast(response.status, 'success'); // Show success toast
+
+            // Automate click to open new tab
+            const openNewTabElement = document.querySelector('#dvoldpatient > div > div');
+            if (openNewTabElement) {
+                console.log("Clicking element to open new tab...");
+                openNewTabElement.click();
+            } else {
+                console.log("Element to open new tab not found.");
+                showToast("Failed to open new tab!", 'error');
+            }
         });
     } else {
         console.log("Patient name or PID not found. Extraction aborted.");
-        alert("Patient data not found!");
+        showToast("Patient data not found!", 'error'); // Show error toast
     }
 }
 
-// Function to extract test data
+// ======================= Extract Test Data =======================
 function extractTestData() {
     console.log("Extracting test data...");
     const testNameElement = document.querySelector("#splabtestname");
@@ -184,27 +264,26 @@ function extractTestData() {
 
         chrome.runtime.sendMessage({ type: "saveTestData", data: { TestName: testName, ResultValue: resultValue, ApprovedOn: approvedOn, PID: pid } }, (response) => {
             console.log("Test data sent to background:", response);
-            alert(response.status);
+            showToast(response.status, 'success'); // Show success toast
+
+            // Automate click on #btnlabtestclose after successful extraction
+            const closeButton = document.querySelector('#btnlabtestclose');
+            if (closeButton) {
+                console.log("Clicking #btnlabtestclose...");
+                closeButton.click();
+                showToast("Test data extracted successfully!", 'success'); // Show additional toast
+            } else {
+                console.log("#btnlabtestclose button not found.");
+                showToast("Failed to close test modal!", 'error'); // Show error toast
+            }
         });
     } else {
         console.log("One or more test data selectors not found. Extraction aborted.");
-        alert("Test data not found!");
+        showToast("Test data not found!", 'error'); // Show error toast
     }
 }
 
-// Inject buttons at the correct locations with improved UI
-
-// Updated "Extract Patient Data" button injection selector (center aligned)
-// Here, we assume the icon class "fa fa-user" for patient data (Font Awesome)
-console.log("Injecting 'Extract Patient Data' button...");
-createButton("extractPatientBtn", "Extract Patient Data", "fa fa-user", "#dvpatientviewonly > div > div > div.modal-body", extractPatientData, "#28a745", "white", true);
-
-// Blue centered "Extract Test Data" button injection
-// Using icon class "fa fa-flask" for test data (Font Awesome)
-console.log("Injecting 'Extract Test Data' button...");
-createButton("extractTestBtn", "Extract Test Data", "fa fa-flask", "#mdlviewlabtest > div > div > div.modal-body", extractTestData, "#3a82f7", "white", true);
-
-// Listen for messages from the extension
+// ======================= Message Listener =======================
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Received message:", message);
     if (message.type === "extractData") {
@@ -217,3 +296,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Sending response back to sender.");
     sendResponse({ status: "Extraction triggered" });
 });
+
+// ======================= Inject Buttons =======================
+console.log("Injecting 'Extract Patient Data' button...");
+createButton(
+    "extractPatientBtn", 
+    "Extract Patient Data", 
+    "fa fa-user", 
+    "#dvpatientviewonly > div > div > div.modal-body", 
+    extractPatientData, 
+    "#28a745", 
+    "white", 
+    true
+);
+
+console.log("Injecting 'Extract Test Data' button...");
+createButton(
+    "extractTestBtn", 
+    "Extract Test Data", 
+    "fa fa-flask", 
+    "#mdlviewlabtest > div > div > div.modal-body", 
+    extractTestData, 
+    "#3a82f7", 
+    "white", 
+    true
+);

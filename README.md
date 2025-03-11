@@ -26,8 +26,7 @@
 ✔️ **Prevents performance lag** with periodic data flushing  
 
 ### 📊 Seamless Data Export & Google Drive Integration  
-✔️ Export test results as an **Excel file**  
-✔️ **Google Apps Script integration** for **direct upload to Google Drive** (avoiding CORS issues)  
+✔️ Export test results as an **Excel file** 
 
 ### 🖥 User-Friendly UI/UX  
 ✔️ **Well-aligned buttons** for smooth workflow  

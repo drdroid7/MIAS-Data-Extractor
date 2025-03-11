@@ -21,11 +21,11 @@
 ✔️ Click **'Extract Patient Data'** to capture **Patient Name & PID**  
 ✔️ Click **'Extract Test Data'** to extract **Test Name, Result Value & Approved On**  
 
-### 📂 Efficient Storage with IndexedDB  
+### 📂 Efficient Storage with Locally  
 ✔️ **Stores extracted data locally** for faster retrieval  
 ✔️ **Prevents performance lag** with periodic data flushing  
 
-### 📊 Seamless Data Export & Google Drive Integration  
+### 📊 Seamless Data Export
 ✔️ Export test results as an **Excel file** 
 
 ### 🖥 User-Friendly UI/UX  

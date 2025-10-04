@@ -4,231 +4,210 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MIAS Suite - Stored Data</title>
+
+    <!-- Import Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        /* Dark Theme Variables */
+        /* BASE THEME VARIABLES (Adapted to match dark UI of screenshot) */
         :root {
-            --primary: #6366f1;
-            --danger: #ef4444;
-            --success: #22c55e;
-            --background: #0f172a;
-            --surface: rgba(30, 41, 59, 0.8);
-            --text: #f8fafc;
-            --border: rgba(51, 65, 85, 0.4);
-            --glass: rgba(255, 255, 255, 0.05);
-            --shadow: rgba(0, 0, 0, 0.2);
-            --h1-gradient-start: #e2e8f0;
-            --h1-gradient-end: #94a3b8;
+            --primary: #5aa447; /* Green for success/export */
+            --danger: #dc3545; /* Red for Clear/delete */
+            --info: #007bff; /* Blue for View Data/Accents */
+            --background: #111111; /* Very dark background */
+            --app-bg: #222222; /* Main application card background (Dark Grey) */
+            --surface: #363636; /* Dark surface for buttons/table headers */
+            --text: #f8f8f8; /* Light text */
+            --light-text: #a0a0a0; /* Subtitle text */
+            --border: rgba(255, 255, 255, 0.1);
+            --shadow: rgba(0, 0, 0, 0.6);
         }
 
-        /* Light Theme Variables */
-        [data-theme="light"] {
-            --primary: #4f46e5;
-            --danger: #dc2626;
-            --success: #16a34a;
-            --background: #f5f7fb;
-            --surface: #ffffff;
-            --text: #1e293b;
-            --border: rgba(203, 213, 225, 0.5);
-            --glass: rgba(255, 255, 255, 0.7);
-            --shadow: rgba(0, 0, 0, 0.05);
-            --h1-gradient-start: #4f46e5;
-            --h1-gradient-end: #7c3aed;
+        /* Reset and Base Styles */
+        * {
+            margin: 0; padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-        }
-
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-        body { 
-            padding: 2.5rem;
+        body {
+            /* FIX: Reduced horizontal padding (4rem -> 1rem) for maximum expansion */
+            padding: 2rem 1rem; 
             background: var(--background);
             color: var(--text);
-            min-height: 100vh;
-            transition: background-color 0.3s, color 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
         }
 
-        .container {
-            max-width: 1200px;
+        /* --- MAIN APP CONTAINER (Unified Card Look) --- */
+        .main-app-container {
+            width: 100%;
+            /* Removed max-width constraint */
             margin: 0 auto;
+            border-radius: 16px;
+            background: var(--app-bg);
+            box-shadow: 0 10px 40px var(--shadow);
+            overflow: hidden;
+            animation: fadeIn 0.6s ease forwards;
         }
 
-        .header {
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
+        /* --- HEADER & CONTROLS (Top Row) --- */
+        .app-header-controls {
+            padding: 1.5rem 2.5rem; 
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: relative;
+            flex-wrap: wrap; 
+            gap: 1rem;
         }
 
-        .header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 120px;
-            height: 2px;
-            background: linear-gradient(90deg, var(--primary), transparent);
+        .title-block {
+            flex-grow: 1;
+            min-width: 200px;
         }
-
-        h1 { 
-            font-size: 2.5rem; 
-            font-weight: 800; 
-            margin-bottom: 0.25rem;
-            background: linear-gradient(45deg, var(--h1-gradient-start), var(--h1-gradient-end));
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-        }
-
-        .author { 
-            font-size: 0.9rem; 
+        
+        .title-block h1 {
+            font-size: 1.5rem; 
+            font-weight: 800;
             color: var(--text);
-            display: block;
-            opacity: 0.9;
-            font-weight: 500;
+            margin-bottom: 0.1rem;
             letter-spacing: 0.5px;
         }
 
-        #exportExcelBtn {
-            background: var(--primary); /* Changed from rgba for better visibility */
-            color: #ffffff; /* Explicit white for contrast */
-            border: none; /* Removed border for cleaner look */
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
+        .title-block .author {
+            font-size: 0.8rem;
+            color: var(--light-text);
+            font-weight: 500;
+        }
+
+        .button-controls {
+            display: flex;
+            gap: 10px; 
+        }
+
+        /* Button Base Style (Flat look) */
+        button {
+            border: 1px solid; 
+            outline: none;
             cursor: pointer;
+            border-radius: 8px;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
-            position: relative;
-            overflow: hidden;
+            justify-content: center;
+            padding: 6px 10px; 
+            height: 35px; 
+            box-shadow: none; 
+            font-size: 0.9rem;
+            background-color: transparent; 
         }
 
-        [data-theme="light"] #exportExcelBtn {
-            background: var(--primary);
-            color: white;
-            border: none;
+        /* Export Button (Green accent) */
+        #exportExcelBtn {
+            color: var(--primary); 
+            border-color: var(--primary);
         }
-
-        #exportExcelBtn:hover {
-            background: #4f46e5; /* Darker shade of primary for hover */
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); /* Matching shadow */
-        }
-
-        [data-theme="light"] #exportExcelBtn:hover {
-            background: #4338ca;
-            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.2);
-        }
-
-        #exportExcelBtn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(
-                120deg,
-                transparent,
-                rgba(255, 255, 255, 0.2),
-                transparent
-            );
-            transition: all 0.5s;
-        }
-
-        #exportExcelBtn:hover::before {
-            left: 100%;
-        }
-
         #exportExcelBtn svg {
-            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
-            stroke-width: 1.5;
-            stroke: #ffffff; /* White stroke for visibility */
+            stroke: var(--primary);
         }
 
-        #themeToggleBtn {
-            background: var(--glass);
-            color: var(--text);
-            border: 1px solid var(--border);
-            padding: 0.75rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        /* Clear Button (Red accent) */
+        #clearDataBtn {
+            color: var(--danger); 
+            border-color: var(--danger);
+        }
+        #clearDataBtn svg {
+            stroke: var(--danger);
         }
 
-        #themeToggleBtn:hover {
-            background: rgba(255, 255, 255, 0.1);
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.05); 
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Hidden button from logic */
+        #themeToggleBtn, #viewDataBtn { display: none !important; }
+
+        /* --- STATUS BAR --- */
+        .status-bar-wrapper {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 0.8rem 2.5rem;
+            font-size: 0.9rem;
+            color: var(--text); 
+            gap: 20px; 
+            border-top: 1px solid var(--border); 
         }
 
-        h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 2rem;
-            color: var(--text);
-            position: relative;
-            padding-left: 1rem;
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-weight: 500; 
+            color: var(--light-text); 
         }
-
-        h2::before {
+        .status-indicator::before {
             content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 60%;
-            background: var(--primary);
-            border-radius: 4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary); 
+            margin-right: 8px;
+        }
+        
+        .status-bar-wrapper span {
+             font-weight: 600;
+             color: var(--text);
+        }
+        .status-bar-wrapper span:first-of-type {
+            color: var(--light-text);
         }
 
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            background: var(--surface);
-            border-radius: 16px; 
-            overflow: hidden; 
-            border: 1px solid var(--border);
-            box-shadow: 0 12px 32px var(--shadow);
-            margin: 1.5rem 0;
-            transition: transform 0.3s ease;
-        }
 
-        table:hover {
-            transform: translateY(-2px);
+        /* --- TABLE SECTION --- */
+        .table-section {
+            padding: 1.5rem 2.5rem 2.5rem; 
+            overflow: visible; 
         }
-
-        th, td { 
-            padding: 1.25rem 2rem; 
-            text-align: left; 
+        
+        h2 { 
+            font-size: 1.3rem;
+            font-weight: 800; 
+            margin-bottom: 1rem;
             color: var(--text);
         }
 
-        th { 
-            background: var(--surface);
+        table {
+            width: 100%; /* Ensure table uses the full width of its container */
+            border-collapse: collapse;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            background: var(--app-bg); 
+        }
+        
+        /* Ensure table header remains sticky within the view */
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th, td {
+            padding: 0.8rem 1.25rem; 
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
             font-weight: 600;
-            letter-spacing: 0.25px;
-            border-bottom: 2px solid var(--primary);
-        }
-
-        [data-theme="light"] th {
-            background: #f8fafc;
+            background: var(--surface); 
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            color: var(--light-text);
             border-bottom: 1px solid var(--border);
-        }
-
-        tr {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         tr:not(:last-child) td {
@@ -236,123 +215,109 @@
         }
 
         tr:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255,255,255,0.06);
         }
 
-        [data-theme="light"] tr:hover {
-            background: #f8fafc;
-        }
-
+        /* Delete Button */
         .delete-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            border: none;
-            background: var(--danger); /* Changed to solid color */
-            color: #ffffff; /* White for contrast */
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        [data-theme="light"] .delete-btn {
-            background: rgba(220, 38, 38, 0.1);
-            color: var(--danger);
-        }
-
-        .delete-btn:hover {
-            background: #dc2626; /* Darker shade for hover */
-            box-shadow: 0 6px 12px rgba(239, 68, 68, 0.25);
-            transform: scale(1.05);
-        }
-
-        [data-theme="light"] .delete-btn:hover {
+            width: 32px; height: 32px; 
             background: var(--danger);
-            color: white;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+        }
+        .delete-btn:hover {
+            background: #d93838;
         }
 
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            body {
-                padding: 1.5rem;
-            }
-            
-            th, td {
-                padding: 1rem;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
+            body { padding: 1rem 0.5rem; }
+            .main-app-container { border-radius: 8px; }
+            .app-header-controls { flex-direction: column; align-items: stretch; padding: 1.5rem; }
+            .button-controls { width: 100%; justify-content: space-between; }
+            .button-controls button { flex-grow: 1; }
+            .status-bar-wrapper { padding: 0.8rem 1.5rem; }
+            .table-section { padding: 1rem; overflow-x: auto; }
+            table { min-width: 600px; }
+        }
 
-            #exportExcelBtn {
-                padding: 0.5rem 1rem;
-                font-size: 0.9rem;
+        /* Adjust body padding for larger screens to ensure some margin */
+        @media (min-width: 1001px) {
+             body {
+                /* FIX: Reduced padding for full expansion */
+                padding: 2rem 2rem; 
             }
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        table {
-            animation: fadeIn 0.6s ease forwards;
-        }
-
-        .sort-arrow {
-            margin-left: 8px;
-            transition: transform 0.3s ease;
-        }
-        
-        .sorted-desc .sort-arrow {
-            transform: rotate(180deg);
+            from {opacity: 0; transform: translateY(15px);}
+            to {opacity: 1; transform: translateY(0);}
         }
     </style>
+
     <script src="libs/xlsx.full.min.js"></script>
     <script src="view.js" defer></script>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <div>
-                <h1>MIAS Suite</h1>
+    <div class="main-app-container">
+        
+        <div class="app-header-controls">
+            <!-- Title Block -->
+            <div class="title-block">
+                <h1>MIAS Tool</h1>
                 <span class="author">Sundaresan Nithiyanandam</span>
             </div>
-            <div style="display: flex; gap: 1rem;">
+
+            <!-- Button Controls -->
+            <div class="button-controls">
                 <button id="exportExcelBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <path d="M12 18v-6"/>
-                        <path d="m9 15 3 3 3-3"/>
+                    <!-- Export Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                        <path d="M14 2v6h6"/>
+                        <path d="M12 17V9"/>
+                        <path d="m8 13 4 4 4-4"/>
                     </svg>
-                    Export to Excel
+                    Export
                 </button>
-                <button id="themeToggleBtn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                <button id="clearDataBtn">
+                    <!-- Clear Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" 
+                        fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                        <line x1="10" x2="10" y1="11" y2="17"/>
+                        <line x1="14" x2="14" y1="11" y2="17"/>
                     </svg>
+                    Clear
                 </button>
+                <!-- Hidden button for view.js logic -->
+                <button id="viewDataBtn" style="display:none;"></button>
             </div>
         </div>
 
-        <h2>Patient Test Records</h2>
+        <!-- Table Section -->
+        <div class="table-section">
+            <h2>Patient Test Records</h2>
 
-        <table>
-            <thead>
-                <tr>
-                    <th id="sortBtn">S.No. <span class="sort-arrow">↓</span></th>
-                    <th>PID</th>
-                    <th>Patient Name</th>
-                    <th>Test Name</th>
-                    <th>Result</th>
-                    <th>Approved On</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="dataBody">
-            </tbody>
-        </table>
+            <table>
+                <thead>
+                    <tr>
+                        <th id="sortBtn">S.No. <span class="sort-arrow">↓</span></th>
+                        <th>PID</th>
+                        <th>Patient Name</th>
+                        <th>Test Name</th>
+                        <th>Result</th>
+                        <th>Approved On</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="dataBody">
+                    <!-- Data populated dynamically by view.js -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>

@@ -1,193 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MIAS Suite</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MIAS Tool</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    :root {
-      --primary: #8b5cf6; --primary-dark: #7c3aed; --secondary: #3b82f6; --success: #22c55e;
-      --danger: #ef4444; --info: #14b8a6; --background: #0f172a; --surface: #1e293b;
-      --text: #f8fafc; --glass: rgba(255, 255, 255, 0.05);
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    * {
-      margin: 0; padding: 0; box-sizing: border-box;
-      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    body {
-      width: 300px; min-height: 200px;
-      padding: 0.75rem; background: linear-gradient(135deg, var(--background), var(--surface));
-      color: var(--text); -webkit-font-smoothing: antialiased;
-    }
-    
-    .container {
-      background: var(--background); border-radius: 1rem; padding: 1rem;
-      text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-      border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(4px);
-      position: relative; overflow: hidden;
-    }
-    
-    .container::before {
-      content: ''; position: absolute; inset: 0;
-      background: radial-gradient(circle at 50% -20%, rgba(99, 102, 241, 0.1), transparent 50%);
-      z-index: -1;
-    }
-    
-    h1 { 
-      font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; 
-      background: linear-gradient(45deg, var(--primary), var(--text));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-    }
-    .author { 
-      color: #94a3b8; font-size: 0.75rem; margin-bottom: 1.5rem; 
-      letter-spacing: 0.5px; font-weight: 400;
-    }
-    
-    .glass-card {
-      background: var(--glass); border-radius: 1rem; padding: 0.75rem;
-      margin: 0.75rem 0; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);
-      box-shadow: 0 4px 30px rgba(0,0,0,0.2); transition: var(--transition);
-    }
-    .glass-card:hover {
-      border: 1px solid rgba(255,255,255,0.3);
-      box-shadow: 0 6px 40px rgba(139, 92, 246, 0.15);
-    }
-    
-    .btn-grid {
-      display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
-    }
-    
-    .btn {
-      padding: 0.6rem; border: none; border-radius: 0.75rem; font-weight: 600;
-      cursor: pointer; transition: var(--transition); display: flex;
-      align-items: center; justify-content: center; gap: 0.5rem;
-      background: var(--surface); color: var(--text); position: relative;
-      overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1;
-    }
-    
-    .btn::before {
-      content: ''; position: absolute; inset: -2px; border-radius: 0.875rem;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      z-index: -1; opacity: 0; transition: var(--transition);
-    }
-    .btn:hover::before { opacity: 1; }
-    .btn::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(120deg, rgba(255,255,255,0.2), transparent);
-      opacity: 0; transition: var(--transition);
-    }
-    
-    .btn:hover {
-      transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    }
-    .btn:hover::after { opacity: 1; }
-    .btn:active {
-      transform: scale(0.95); box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-    .btn:focus {
-      outline: none; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.5);
-    }
-    
-    .btn-primary::before { background: linear-gradient(45deg, var(--primary), var(--primary-dark)); }
-    .btn-secondary::before { background: linear-gradient(45deg, var(--secondary), #2563eb); }
-    .btn-success::before { background: linear-gradient(45deg, var(--success), #16a34a); }
-    .btn-danger::before { background: linear-gradient(45deg, var(--danger), #dc2626); }
-    .btn-info::before { background: linear-gradient(45deg, var(--info), #0d9488); }
+    <style>
+        /* New Dark Glass Colors */
+        :root {
+            --bg-primary: #121212; /* Deep Charcoal/Black */
+            --bg-secondary: #1f1f1f;
+            --text-main: #f0f0f0;
+            --text-muted: #b0b0b0;
+            --accent-blue: #007bff; /* Bright Blue */
+            --accent-green: #38c172; /* Bright Success Green */
+            --accent-red: #e3342f; /* Bright Danger Red */
+            --glass-card: rgba(255, 255, 255, 0.05);
+            --glass-button: rgba(255, 255, 255, 0.03);
+            --border-subtle: rgba(255, 255, 255, 0.1);
+            --shadow-subtle: rgba(0, 0, 0, 0.8);
+            --shadow-glow: rgba(0, 123, 255, 0.3);
+            --transition: all 0.3s cubic-bezier(0.2, 0.8, 0.5, 1);
+        }
+        
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            /* Reduced size for pop-up efficiency */
+            width: 280px; 
+            min-height: 180px;
+            padding: 0.75rem; 
+            background: var(--bg-primary);
+            color: var(--text-main); 
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            background: var(--bg-secondary); 
+            border-radius: 1rem; 
+            padding: 1rem;
+            text-align: center; 
+            box-shadow: 0 4px 20px var(--shadow-subtle);
+            border: 1px solid var(--border-subtle); 
+            position: relative; 
+            overflow: hidden;
+        }
+        
+        h1 { 
+            font-size: 1.4rem; 
+            font-weight: 800; 
+            margin-bottom: 0.15rem; 
+            color: var(--text-main);
+            letter-spacing: 0.5px;
+        }
 
-    #viewData { grid-column: 1 / -1; width: 100%; }
+        .author { 
+            color: var(--text-muted); 
+            font-size: 0.7rem; 
+            margin-bottom: 1rem; 
+            font-weight: 400;
+        }
+        
+        .card-actions {
+            background: var(--glass-card); 
+            border-radius: 0.75rem; 
+            padding: 0.6rem;
+            margin: 0.75rem 0; 
+            /* Blur effect */
+            backdrop-filter: blur(8px); 
+            border: 1px solid var(--border-subtle);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+            transition: var(--transition);
+        }
+        
+        .btn-row {
+            display: flex; 
+            gap: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
+        .btn-row > button {
+            flex-grow: 1; 
+        }
+        
+        .btn {
+            padding: 0.6rem; 
+            border: none; 
+            border-radius: 0.6rem; 
+            font-weight: 600;
+            cursor: pointer; 
+            transition: var(--transition); 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.4rem;
+            background: var(--glass-button); 
+            color: var(--text-main); 
+            position: relative;
+            overflow: hidden; 
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            width: 100%; /* Ensure full width when not in flex row */
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px); 
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px var(--shadow-glow);
+        }
+        .btn:active {
+            transform: scale(0.98); 
+            box-shadow: 0 1px 5px rgba(0,0,0,0.5);
+        }
+        .btn:focus {
+            outline: none; 
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
 
-    #status, #patientCount {
-      font-size: 0.85rem; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(255,255,255,0.05));
-      padding: 0.75rem; border-radius: 0.75rem; display: flex; align-items: center;
-      justify-content: center; gap: 0.75rem; transition: var(--transition);
-      margin: 0.75rem 0; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px);
-    }
-    .loading::before {
-      content: ''; display: inline-block; width: 1rem; height: 1rem; margin-right: 0.5rem;
-      border: 2px solid var(--text); border-top: 2px solid transparent; border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+        /* Specific Button Colors for Accent */
+        .btn-success { color: var(--accent-green); }
+        .btn-danger { color: var(--accent-red); }
+        .btn-info { color: var(--accent-blue); }
 
-    .icon {
-      width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor;
-      stroke-width: 1.5; transition: var(--transition);
-    }
-    .btn:hover .icon { transform: scale(1.1); }
+        .btn-success:hover { box-shadow: 0 4px 10px rgba(56, 193, 114, 0.4); }
+        .btn-danger:hover { box-shadow: 0 4px 10px rgba(227, 52, 47, 0.4); }
+        .btn-info:hover { box-shadow: 0 4px 10px rgba(0, 123, 255, 0.4); }
 
-    @media (max-width: 340px) {
-      body { padding: 0.5rem; }
-      .btn { padding: 0.5rem; font-size: 0.9rem; }
-      .btn-grid { gap: 0.5rem; }
-      .icon { width: 1rem; height: 1rem; }
-    }
+        /* View Data Specific Styling (Increased padding for vertical height) */
+        #viewData {
+            padding: 0.8rem 0.6rem; /* Increase vertical padding */
+            font-size: 0.95rem;
+        }
 
-    .pulse { animation: pulse 1.5s infinite; }
-    @keyframes pulse {
-      0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; }
-    }
-  </style>
+        /* Status and Count Bar Styling */
+        .info-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        #status, #patientCount {
+            flex-grow: 1;
+            font-size: 0.75rem; 
+            background: var(--glass-button);
+            padding: 0.5rem 0.75rem; 
+            border-radius: 0.5rem; 
+            display: flex; 
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.5rem; 
+            transition: var(--transition);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .loading::before {
+            content: ''; display: inline-block; width: 0.8rem; height: 0.8rem; 
+            border: 2px solid var(--text-main); border-top: 2px solid transparent; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .icon {
+            width: 1rem; height: 1rem; fill: none; stroke: currentColor;
+            stroke-width: 2; transition: var(--transition);
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>MIAS Suite</h1>
-    <p class="author">Sundaresan Nithiyanandam</p>
+    <div class="container">
+        <h1>MIAS Tool</h1>
+        <p class="author">Sundaresan Nithiyanandam</p>
 
-    <div class="glass-card">
-      <div class="btn-grid">
-        <button class="btn btn-primary" id="extractPatientData" aria-label="Extract patient data">
-          <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-          </svg>
-          Patient
-        </button>
-        <button class="btn btn-secondary" id="extractTestData" aria-label="Extract test data">
-          <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Test
-        </button>
-        <button class="btn btn-success" id="generateExcel" aria-label="Generate Excel file">
-          <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Excel
-        </button>
-        <button class="btn btn-danger" id="clearData" aria-label="Clear all data">
-          <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-          Clear
-        </button>
-        <button class="btn btn-info" id="viewData" aria-label="View extracted data">
-          <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
-          </svg>
-          View Data
-        </button>
-      </div>
+        <div class="card-actions">
+            <div class="btn-row">
+                <button class="btn btn-success" id="generateExcel" aria-label="Export CSV Report">
+                    <svg class="icon" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export
+                </button>
+                <button class="btn btn-danger" id="clearData" aria-label="Clear All Data">
+                    <svg class="icon" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Clear
+                </button>
+            </div>
+            
+            <!-- Full Width Button, now with increased vertical padding -->
+            <button class="btn btn-info" id="viewData" aria-label="View Extracted Data">
+                <svg class="icon" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                View Data
+            </button>
+        </div>
+
+        <div class="info-bar">
+            <div id="status">
+                <svg class="icon" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Ready
+            </div>
+            <p id="patientCount">
+                <svg class="icon" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 1.857a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                P: 0
+            </p>
+        </div>
     </div>
 
-    <div id="status">
-      <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      Ready to extract data
-    </div>
-    <p id="patientCount">
-      <svg class="icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 1.857a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-      Patients: 0
-    </p>
-  </div>
-
-  <script src="libs/xlsx.full.min.js"></script>
-  <script type="module" src="popup.js"></script>
+    <script src="libs/xlsx.full.min.js"></script>
+    <script type="module" src="popup.js"></script>
 </body>
 </html>

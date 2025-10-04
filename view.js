@@ -1,192 +1,173 @@
+// view.js - FINAL CLEANED CODE (All persistence managed by Background Script)
+
 document.addEventListener("DOMContentLoaded", function () {
     let sortDescending = true; // Default: Newest entries first
 
     console.log("Initializing view page...");
 
-    // Theme toggle function
+    // ====================== Constants ======================
+
+    const MESSAGE_TYPES = {
+        getRecords: "getPatientRecords",
+        deleteRecord: "deleteRecord", // Deletes entire patient record by PID
+        deleteTest: "deleteTest",    // Deletes single test from a patient
+        generateReport: "generateReport"
+    };
+    
+    // --- Export Trigger Function ---
+    async function triggerExport() {
+        const exportBtn = document.getElementById('exportExcelBtn');
+        if (!exportBtn || exportBtn.disabled) return;
+        
+        exportBtn.disabled = true;
+        exportBtn.textContent = "Generating...";
+
+        try {
+            // Send the command to the background script to handle data processing and download initiation
+            const response = await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.generateReport });
+            
+            // NOTE: Using a custom modal/message box instead of alert in a real app
+            if (response.status && response.status.includes("successfully")) {
+                console.log("CSV report generation initiated successfully!");
+            } else if (response.status === "No data found") {
+                console.log("No data available to export.");
+            } else {
+                console.error(`Export failed: ${response.status || "Unknown error during download."}`);
+            }
+        } catch (error) {
+            console.error("Export initiation failed:", error);
+        } finally {
+            exportBtn.disabled = false;
+            exportBtn.textContent = "Export to CSV"; 
+        }
+    }
+    
+    // --- Theme functions (FIXED FOR PERSISTENCE) ---
+    
+    // Define reusable SVG icons for clarity and consistency
+    const sunIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+    const moonIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+    
+    // Icon for Trash/Delete Action (used for both patient and test)
+    const trashIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>`;
+
+
+    // Helper function to apply a specific theme and update the button icon
+    function applyTheme(theme) {
+        const body = document.body;
+        body.setAttribute("data-theme", theme);
+        
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        if (themeToggleBtn) {
+            themeToggleBtn.innerHTML = theme === "dark" 
+                ? sunIcon // Show sun icon when currently dark mode (i.e., click to switch to light)
+                : moonIcon; // Show moon icon when currently light mode (i.e., click to switch to dark)
+        }
+    }
+
+    // Toggles the theme and saves the new state
     function toggleTheme() {
         const body = document.body;
+        // Determine the new theme based on the current state
         const isDark = body.getAttribute("data-theme") === "dark";
+        const newTheme = isDark ? "light" : "dark";
 
-        if (isDark) {
-            body.setAttribute("data-theme", "light");
-            localStorage.setItem("theme", "light");
-            // Update toggle button icon to sun (light mode)
-            document.getElementById('themeToggleBtn').innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-            `;
-        } else {
-            body.setAttribute("data-theme", "dark");
-            localStorage.setItem("theme", "dark");
-            // Update toggle button icon to moon (dark mode)
-            document.getElementById('themeToggleBtn').innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            `;
-        }
+        // 1. Apply the new theme (also updates the icon)
+        applyTheme(newTheme);
+        
+        // 2. Save the new state
+        localStorage.setItem("theme", newTheme);
     }
 
-    // Set initial theme based on localStorage
+    // Sets the theme based on local storage on page load
     function setInitialTheme() {
+        // Read the saved theme, default to "dark"
         const savedTheme = localStorage.getItem("theme") || "dark";
-        document.body.setAttribute("data-theme", savedTheme);
-
-        // Set the correct icon for the toggle button
-        const themeToggleBtn = document.getElementById("themeToggleBtn");
-        if (savedTheme === "light") {
-            themeToggleBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5"></circle>
-                    <line x1="12" y1="1" x2="12" y2="3"></line>
-                    <line x1="12" y1="21" x2="12" y2="23"></line>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                    <line x1="1" y1="12" x2="3" y2="12"></line>
-                    <line x1="21" y1="12" x2="23" y2="12"></line>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                </svg>
-            `;
-        } else {
-            themeToggleBtn.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-            `;
-        }
+        
+        // Apply the saved theme without toggling it
+        applyTheme(savedTheme); 
     }
 
-    // Attach theme toggle functionality to the button
     const themeToggleBtn = document.getElementById("themeToggleBtn");
     if (themeToggleBtn) {
         themeToggleBtn.addEventListener("click", toggleTheme);
     }
-
-    // Set the initial theme when the page loads
+    // Call the fixed initialization function
     setInitialTheme();
 
-    // Export data to Excel
-    async function exportToExcel() {
-        console.log("Exporting data to Excel...");
+    // --- Core Data Functions (Delegated to Background Script) ---
 
+    // Get patient records from IndexedDB (via messaging background)
+    async function getPatientRecords() {
+        const response = await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.getRecords });
+        return response?.records || [];
+    }
+    
+    // Deletes a single patient record by its PID (via messaging background)
+    async function deletePatientRecordByPID(pid) {
+        return chrome.runtime.sendMessage({ type: MESSAGE_TYPES.deleteRecord, data: { pid: pid } });
+    }
+
+    // Deletes a single test record from a patient's Tests array (NOW MESSAGING BACKGROUND)
+    async function deleteTestRecord(patientPID, testIndex) {
         try {
-            const patientRecords = await getPatientRecords();
-            if (!patientRecords.length) {
-                alert("No data available to export.");
-                return;
+            const response = await chrome.runtime.sendMessage({ 
+                type: MESSAGE_TYPES.deleteTest, 
+                data: { pid: patientPID, index: testIndex } 
+            });
+            if (response && response.status.startsWith("Error")) {
+                throw new Error(response.status);
             }
-
-            const combinedData = combinePatientAndTestData(patientRecords);
-
-            // Ensure XLSX library is loaded
-            if (typeof XLSX === 'undefined') {
-                console.error("XLSX library is not loaded.");
-                alert("XLSX library is not available. Please ensure xlsx.full.min.js is loaded.");
-                return;
-            }
-
-            // Create a worksheet and workbook
-            const ws = XLSX.utils.json_to_sheet(combinedData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Patient Data');
-
-            // Download the Excel file
-            XLSX.writeFile(wb, `PatientData_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`);
-
-            console.log("Excel file downloaded successfully!");
+            return true;
         } catch (error) {
-            console.error("Export failed:", error);
-            alert("Error exporting data to Excel. Please check the console for details.");
+            console.error("Test deletion failed via background message:", error);
+            // NOTE: Using console.error instead of alert due to sandbox environment
+            console.error(`Error deleting test: ${error.message}`);
+            return false;
         }
     }
 
-    // Get patient records from storage
-    function getPatientRecords() {
-        return new Promise((resolve) => {
-            chrome.storage.local.get({ patientRecords: [] }, (result) => {
-                resolve(result.patientRecords);
-            });
-        });
-    }
-
-    // Combine patient and test data for Excel export - MODIFIED FUNCTION
-    function combinePatientAndTestData(patientRecords) {
-        return patientRecords.flatMap((patient) => {
-            if (patient.Tests.length === 0) {
-                return [{
-                    Age: patient.Age || "-",
-                    Gender: patient.Gender || "-",
-                    Mobile: patient.Mobile || "-",
-                    Name: patient.Name || "-",
-                    PID: patient.PID || "-",
-                    ApprovedOn: "-",
-                    ResultValue: "-",
-                    TestName: "-"
-                }];
-            } else {
-                return patient.Tests.map((test) => ({
-                    Age: patient.Age || "-",
-                    Gender: patient.Gender || "-",
-                    Mobile: patient.Mobile || "-",
-                    Name: patient.Name || "-",
-                    PID: patient.PID || "-",
-                    ApprovedOn: test.ApprovedOn || "-",
-                    ResultValue: test.ResultValue || "-",
-                    TestName: test.TestName || "-"
-                }));
-            }
-        });
-    }
 
     // Load patient data into the table
-    function loadPatientData() {
+    async function loadPatientData() {
         console.log("Loading patient data...");
 
-        chrome.storage.local.get({ patientRecords: [] }, (result) => {
-            console.log("Retrieved patient records from storage:", result.patientRecords);
-
-            let tableBody = document.getElementById("dataBody");
+        try {
+            const patientRecords = await getPatientRecords();
+            console.log("Retrieved patient records from storage:", patientRecords);
+            
+            const tableBody = document.getElementById("dataBody");
+            if (!tableBody) return;
             tableBody.innerHTML = ""; // Clear existing data
 
             let allRows = [];
 
-            result.patientRecords.forEach((patient, patientIndex) => {
-                if (patient.Tests.length === 0) {
-                    // ✅ Display patient even if no tests are available + Add delete button
+            // 1. Flatten the structured data for display/sorting
+            patientRecords.forEach((patient) => {
+                const patientPID = patient.PID;
+                const patientName = patient.Name;
+
+                if (!patient.Tests || patient.Tests.length === 0) { 
                     allRows.push({
                         entryIndex: allRows.length,
-                        PID: patient.PID,
-                        Name: patient.Name,
+                        PID: patientPID,
+                        Name: patientName,
                         TestName: "-",
                         ResultValue: "-",
                         ApprovedOn: "-",
-                        patientIndex,
-                        testIndex: null,
-                        isPatientRow: true, // Mark as a patient-only row
+                        isPatientRow: true, 
+                        testIndex: -1
                     });
                 } else {
-                    // ✅ Add test records under the same patient
                     patient.Tests.forEach((test, testIndex) => {
                         allRows.push({
                             entryIndex: allRows.length,
-                            PID: patient.PID,
-                            Name: patient.Name,
+                            PID: patientPID,
+                            Name: patientName,
                             TestName: test.TestName,
                             ResultValue: test.ResultValue,
                             ApprovedOn: test.ApprovedOn || "-",
-                            patientIndex,
-                            testIndex,
+                            testIndex: testIndex, // Index within the patient.Tests array
                             isPatientRow: false,
                         });
                     });
@@ -198,10 +179,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Sort records (default: newest first)
+            // 2. Sort records (by entryIndex/insertion order)
             allRows.sort((a, b) => (sortDescending ? b.entryIndex - a.entryIndex : a.entryIndex - b.entryIndex));
-            console.log("Sorted records:", allRows);
 
+            // 3. Render rows
             allRows.forEach((entry, index) => {
                 let row = tableBody.insertRow();
                 row.innerHTML = `
@@ -212,100 +193,70 @@ document.addEventListener("DOMContentLoaded", function () {
                     <td>${entry.ResultValue}</td>
                     <td>${entry.ApprovedOn}</td>
                     <td>
-                        ${
-                            entry.isPatientRow
-                                ? `<button class="delete-patient-btn" data-patient="${entry.patientIndex}" title="Delete Patient">🗑️</button>`
-                                : `<button class="delete-btn" data-patient="${entry.patientIndex}" data-test="${entry.testIndex}" title="Delete Test">🗑️</button>`
+                        ${entry.isPatientRow
+                            ? `<button class="delete-btn delete-patient-btn" data-pid="${entry.PID}" title="Delete Patient Record">${trashIcon}</button>`
+                            : `<button class="delete-btn delete-test-btn" data-pid="${entry.PID}" data-test="${entry.testIndex}" title="Delete Single Test Result">${trashIcon}</button>`
                         }
                     </td>
                 `;
             });
 
-            // Attach delete event for test rows
-            document.querySelectorAll(".delete-btn").forEach((button) => {
-                button.addEventListener("click", function () {
-                    let patientIndex = parseInt(this.getAttribute("data-patient"));
-                    let testIndex = parseInt(this.getAttribute("data-test"));
+            // 4. Re-attach listeners to the rendered buttons
+            document.querySelectorAll(".delete-test-btn").forEach((button) => {
+                button.addEventListener("click", async function () {
+                    // NOTE: Replace native confirm with a custom modal in a real app
+                    if (confirm("Are you sure you want to delete this single test result?")) {
+                        const patientPID = this.getAttribute("data-pid");
+                        const testIndex = parseInt(this.getAttribute("data-test"));
 
-                    console.log(`Delete test clicked - Patient Index: ${patientIndex}, Test Index: ${testIndex}`);
-                    deleteTestRecord(patientIndex, testIndex);
+                        if (await deleteTestRecord(patientPID, testIndex)) {
+                            // On successful deletion, refresh the view
+                            loadPatientData(); 
+                        }
+                    }
                 });
             });
 
-            // Attach delete event for patient-only rows
             document.querySelectorAll(".delete-patient-btn").forEach((button) => {
-                button.addEventListener("click", function () {
-                    let patientIndex = parseInt(this.getAttribute("data-patient"));
-
-                    console.log(`Delete patient clicked - Patient Index: ${patientIndex}`);
-                    deletePatientRecord(patientIndex);
+                button.addEventListener("click", async function () {
+                    // NOTE: Replace native confirm with a custom modal in a real app
+                    if (confirm("Are you sure you want to delete this entire patient record (including tests)?")) {
+                        const patientPID = this.getAttribute("data-pid");
+                        await deletePatientRecordByPID(patientPID); 
+                        loadPatientData();
+                    }
                 });
             });
-        });
+
+        } catch (error) {
+            console.error("Failed to load patient data:", error);
+            document.getElementById("dataBody").innerHTML = `<tr><td colspan="7" style="color:red;">Error loading data: ${error.message}. Check console.</td></tr>`;
+        }
     }
 
-    function deleteTestRecord(patientIndex, testIndex) {
-        console.log(`Deleting test record - Patient Index: ${patientIndex}, Test Index: ${testIndex}`);
+    // Listen for "dataUpdated" event from background.js (This ensures auto-refresh)
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+        if (request.type === "dataUpdated") { 
+            console.log("Refreshing view data due to background update...");
+            loadPatientData();
+        }
+        return false; // Sync response is okay here
+    });
 
-        chrome.storage.local.get({ patientRecords: [] }, (result) => {
-            let patientRecords = result.patientRecords;
-            if (patientRecords[patientIndex]) {
-                patientRecords[patientIndex].Tests.splice(testIndex, 1);
-
-                // ✅ Remove patient if no tests remain
-                if (patientRecords[patientIndex].Tests.length === 0) {
-                    patientRecords.splice(patientIndex, 1);
-                }
-
-                console.log("Updated patient records after test deletion:", patientRecords);
-                chrome.storage.local.set({ patientRecords }, loadPatientData);
-            }
-        });
-    }
-
-    function deletePatientRecord(patientIndex) {
-        console.log(`Deleting patient record - Patient Index: ${patientIndex}`);
-
-        chrome.storage.local.get({ patientRecords: [] }, (result) => {
-            let patientRecords = result.patientRecords;
-
-            if (patientRecords[patientIndex]) {
-                patientRecords.splice(patientIndex, 1); // Remove patient completely
-                console.log("Updated patient records after patient deletion:", patientRecords);
-                chrome.storage.local.set({ patientRecords }, loadPatientData);
-            }
-        });
-    }
-
+    // --- Event Handlers ---
+    
     // Sorting button click event
-    document.getElementById("sortBtn").addEventListener("click", function () {
+    document.getElementById("sortBtn")?.addEventListener("click", function () {
         sortDescending = !sortDescending;
-        this.textContent = sortDescending ? "S.No. 🔽" : "S.No. 🔼";
+        this.innerHTML = `S.No. <span class="sort-arrow">${sortDescending ? "↓" : "↑"}</span>`;
         console.log("Sorting order changed. New order:", sortDescending ? "Descending (Newest First)" : "Ascending (Oldest First)");
         loadPatientData();
     });
 
-    // ✅ Listen for "Clear Data" event and update the live page
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-        if (request.type === "refreshViewData") {
-            console.log("Refreshing view data...");
-            loadPatientData();
-        } else if (request.type === "clearLiveData") {
-            console.log("Clearing live data...");
-            chrome.storage.local.set({ patientRecords: [] }, loadPatientData);
-        }
-    });
-
-    // Auto-refresh data when storage changes
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-        console.log("Storage changes detected in:", areaName, changes);
-        loadPatientData();
-    });
-
-    // Attach export to Excel functionality to the button
+    // Attach export to CSV functionality to the button
     const exportExcelBtn = document.getElementById("exportExcelBtn");
     if (exportExcelBtn) {
-        exportExcelBtn.addEventListener("click", exportToExcel);
+        exportExcelBtn.addEventListener("click", triggerExport); 
     }
 
     // Load data on page load

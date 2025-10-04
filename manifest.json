@@ -5,16 +5,19 @@
     "description": "Extract biochemical test data from a protected website and store it in an Excel file.",
     "permissions": [
         "storage",
-		"unlimitedStorage",
+        "unlimitedStorage",
         "scripting",
+        "downloads",
         "activeTab"
     ],
     "host_permissions": [
         "https://mias.smc.saveetha.com/*"
     ],
+
     "background": {
         "service_worker": "background.js"
     },
+
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
@@ -23,19 +26,31 @@
             "128": "icons/icon128.png"
         }
     },
+
     "content_scripts": [
         {
-            "matches": ["https://mias.smc.saveetha.com/*"],
-            "js": ["content.js", "popup.js", "view.js"],
+            "matches": ["https://mias.smc.saveetha.com/Casesheet/Casesheetview.aspx*"],
+            "js": ["content.js"],
             "run_at": "document_idle"
         }
     ],
+
     "web_accessible_resources": [
         {
-            "resources": ["content.js", "popup.js", "view.js"],
+            "resources": ["view.html"],
+            "matches": ["<all_urls>"]
+        }
+        ,
+        {
+            "resources": [
+                "libs/localforage.min.js", 
+                "popup.html", 
+                "view.js"
+            ],
             "matches": ["https://mias.smc.saveetha.com/*"]
         }
     ],
+
     "icons": {
         "16": "icons/icon16.png",
         "48": "icons/icon48.png",

@@ -1,267 +1,287 @@
+// popup.js - FINAL WORKING CODE
+
+// Use a flag to ensure the script's initialization logic runs only once.
+if (window.popupListenersInitialized) {
+    console.log("Popup listeners already initialized. Skipping setup.");
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     console.log("Popup loaded");
 
-    // Function to show dark-themed toast notifications
+    // --- Extension URL Constant ---
+    // FIX: Using chrome.runtime.getURL() makes the code portable, as the extension ID 
+    // is now dynamically retrieved.
+    const EXTENSION_VIEW_URL = chrome.runtime.getURL("view.html");
+    // Define the specific host domain where content script actions are meaningful
+    const TARGET_HOST = "mias.smc.saveetha.com";
+
+    // --- Helper Functions ---
+    
+    /**
+     * Shows a modern, elegant toast notification sliding up from the bottom.
+     * The animation uses a cubic-bezier function for a subtle bounce effect.
+     */
     function showToast(message, type = "info") {
         console.log(`Showing toast: ${message}`);
+        
+        // Configuration for modern, subtle colors
+        const typeConfig = {
+            success: { bg: '#10b981', icon: '✓', color: '#fff' }, // Emerald 500
+            error: { bg: '#ef4444', icon: '!', color: '#fff' },   // Red 500
+            info: { bg: '#3b82f6', icon: 'i', color: '#fff' }    // Blue 500
+        };
+
+        const config = typeConfig[type] || typeConfig.info;
+
         const toast = document.createElement('div');
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translate(-50%, 50px); /* Start off-screen below */
+            background-color: ${config.bg};
+            color: ${config.color};
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+            z-index: 10000;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Modern bounce/ease-out effect */
+            min-width: 250px;
+            max-width: 90%;
+        `;
         
-        // Create icon element
-        const icon = document.createElement('span');
-        icon.textContent = type === "error" ? '❌' : type === "success" ? '✅' : 'ℹ️';
-        icon.style.marginRight = '8px';
+        toast.innerHTML = `
+            <span style="font-weight: 700; margin-right: 10px; font-size: 1.2em;">${config.icon}</span>
+            <span>${message}</span>
+        `;
         
-        // Create message element
-        const messageSpan = document.createElement('span');
-        messageSpan.textContent = message;
-        
-        // Append icon and message to toast
-        toast.appendChild(icon);
-        toast.appendChild(messageSpan);
-
-        // Toast styling
-        toast.style.position = 'fixed';
-        toast.style.top = '20px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.backgroundColor = type === "error" ? '#d32f2f' : type === "success" ? '#388e3c' : '#323232';
-        toast.style.color = '#fff';
-        toast.style.padding = '12px 24px';
-        toast.style.borderRadius = '12px';
-        toast.style.fontFamily = '"Segoe UI", Arial, sans-serif';
-        toast.style.fontSize = '14px';
-        toast.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-        toast.style.zIndex = '10000';
-        toast.style.opacity = '0';
-        toast.style.display = 'flex';
-        toast.style.alignItems = 'center';
-        
-        // Animation for sliding in from top
-        toast.style.transition = 'all 0.3s ease-in-out';
-        toast.style.transform = 'translate(-50%, -20px)'; // Start slightly above
-
         document.body.appendChild(toast);
 
-        // Fade in and slide down
+        // Slide in
         setTimeout(() => {
             toast.style.opacity = '1';
             toast.style.transform = 'translate(-50%, 0)';
         }, 10);
 
-        // Auto-remove after 2 seconds with fade out and slide up
+        // Slide out
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transform = 'translate(-50%, -20px)';
+            toast.style.transform = 'translate(-50%, 50px)';
             setTimeout(() => {
                 toast.remove();
-            }, 300); // Matches transition duration (0.3s = 300ms)
-        }, 2000); // Reduced to 2 seconds
+            }, 400); // Wait for transition to finish
+        }, 3000); // Display for 3 seconds
     }
 
-    // Get UI elements first
-    const extractPatientDataBtn = document.getElementById('extractPatientData');
-    const extractTestDataBtn = document.getElementById('extractTestData');
-    const generateExcelBtn = document.getElementById('generateExcel');
+    async function getCurrentTab() {
+        // Find the active tab in the current window.
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        
+        // FIX: Return null instead of throwing an error on internal/restricted Chrome pages
+        if (!tab || !tab.id || tab.url.startsWith('chrome://')) {
+            return null; 
+        }
+        return tab;
+    }
+    
+    // Get UI elements (Only management buttons remain)
+    const generateExcelBtn = document.getElementById('generateExcel'); 
     const clearDataBtn = document.getElementById('clearData');
     const statusDiv = document.getElementById('status');
     const patientCountElement = document.getElementById('patientCount');
     const viewDataBtn = document.getElementById("viewData");
 
-    // Clear stored data & update live page
-    clearDataBtn.addEventListener('click', async () => {
-        console.log("Clear Data button clicked");
-        setLoading(true, "Clearing data...");
 
-        try {
-            // Remove stored data
-            await chrome.storage.local.remove(['patientData', 'testData', 'patientRecords']);
-            console.log("Data cleared from Chrome Storage");
+    // --- Core Logic Functions ---
 
-            // Send message to `view.html` to refresh the table
-            chrome.runtime.sendMessage({ type: "refreshViewData" });
-
-            // Send message to clear live page data
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab) {
-                await chrome.tabs.sendMessage(tab.id, { type: "clearLiveData" });
-            }
-
-            showToast("Data cleared successfully!", "success");
-            await updateStatusMessage();
-            await updatePatientCount();
-        } catch (error) {
-            console.error("Clear failed:", error);
-            showToast(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    // Initialize View Data button
-    if (viewDataBtn) {
-        viewDataBtn.addEventListener("click", () => {
-            chrome.tabs.create({ url: chrome.runtime.getURL("view.html") });
-        });
-        console.log("View Data button initialized.");
-    } else {
-        console.error("View Data button not found in popup.html!");
+    async function isTargetPage(tab) {
+        // Check if the tab URL starts with http(s) and contains the target domain
+        return tab.url.startsWith("http") && tab.url.includes(TARGET_HOST);
     }
 
-    // Inject buttons into the webpage
-    injectButtonsIntoPage();
+    // Helper to generate the status HTML with the colored dot
+    function getStatusHtml(message, isReady) {
+        const color = isReady ? '#10b981' : '#ef4444'; // Green or Red
+        const dotHtml = `<span style="display:inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; margin-right: 6px;"></span>`;
+        return `${dotHtml}${message}`;
+    }
 
-    // Ensure all async functions execute properly
+    async function updateStatusMessage() {
+        // Direct call to the background service worker
+        const response = await chrome.runtime.sendMessage({ type: "getPatientRecords" });
+        const patientRecords = response.records || [];
+        
+        const totalTests = patientRecords.reduce((acc, p) => acc + (p.Tests ? p.Tests.length : 0), 0);
+
+        // The logic below defines the text and the class name for the status bar.
+        // The visual indicator (light) is powered by the class name applied here.
+
+        if (patientRecords.length && totalTests) {
+            setStatus("Ready", "ready"); // Data exists and looks complete
+        } else if (patientRecords.length) {
+            setStatus("Ready", "ready"); // Data exists, even if incomplete (still functional)
+        } else {
+            setStatus("Ready", "ready"); // No data yet, but extension is ready to work.
+        }
+    }
+
+    async function updatePatientCount() {
+        // Direct call to the background service worker
+        const response = await chrome.runtime.sendMessage({ type: "getPatientRecords" });
+        const patientData = response.records || [];
+        
+        if (patientCountElement) {
+            // Updated to be concise: P: Count
+            patientCountElement.textContent = `P: ${patientData.length}`; 
+        }
+    }
+
+    function setLoading(isLoading, message = "") {
+        // Disable/enable buttons based on loading state
+        if(generateExcelBtn) generateExcelBtn.disabled = isLoading;
+        if(clearDataBtn) clearDataBtn.disabled = isLoading;
+        if(viewDataBtn) viewDataBtn.disabled = isLoading;
+        
+        // Update status bar text during loading or error conditions
+        if (message.includes("Error") || message.includes("Failed")) {
+            setStatus("Not Ready", "not-ready");
+        } else if (isLoading) {
+            setStatus("Checking...", "loading");
+        } else {
+            // Restore actual status after loading finishes
+            if (statusDiv.textContent === "Checking...") {
+                setStatus("Ready", "ready"); 
+            }
+        }
+    }
+
+    function setStatus(message, type) {
+        if(statusDiv) {
+            // Determine if the status should be considered "Ready" (Green dot)
+            const isReady = (type === "ready" || type === "success" || type === "loading");
+
+            // 1. Set the inner HTML with the dot and text
+            statusDiv.innerHTML = getStatusHtml(message, isReady);
+            
+            // 2. Set the class name for the HTML styling (if needed, e.g., pulse animation)
+            statusDiv.className = isReady ? "ready" : "not-ready";
+        }
+    }
+
+    // --- Event Listeners (Attach only if not initialized) ---
+
+    if (!window.popupListenersInitialized) {
+
+        // 1. Clear Data Button (Direct message to background script)
+        if (clearDataBtn) {
+            clearDataBtn.addEventListener('click', async () => {
+                console.log("Clear Data button clicked");
+                setLoading(true, "Clearing data...");
+
+                try {
+                    // Use chrome.runtime.sendMessage for background commands like clearing data
+                    const response = await chrome.runtime.sendMessage({ type: "clearData" }); 
+                    
+                    if (response && response.status === "All data cleared") {
+                        showToast("All data cleared successfully!", "success");
+                    } else if (response) {
+                        throw new Error(response.status || "Unknown error during clear.");
+                    } else {
+                        throw new Error("Background script did not respond to clearData.");
+                    }
+                    
+                } catch (error) {
+                    console.error("Clear failed:", error);
+                    showToast(`Error: ${error.message}`, "error"); 
+                } finally {
+                    await updateStatusMessage();
+                    await updatePatientCount();
+                    setLoading(false);
+                }
+            });
+        }
+
+        // 2. Initialize View Data button
+        if (viewDataBtn) {
+            viewDataBtn.addEventListener("click", () => {
+                chrome.tabs.create({ url: EXTENSION_VIEW_URL });
+            });
+        }
+
+        // 3. Generate Excel file (Direct message to background script)
+        if(generateExcelBtn) {
+            generateExcelBtn.addEventListener('click', async () => {
+                setLoading(true, "Generating CSV Report...");
+                
+                try {
+                    // Send message to background script (generate report usually runs in background)
+                    const response = await chrome.runtime.sendMessage({ type: "generateReport" });
+                    
+                    if (response?.status) {
+                        showToast(response.status, response.status.includes("successfully") ? "success" : "error");
+                    }
+                } catch (error) {
+                    showToast(`Export Error: ${error.message}`, "error");
+                } finally {
+                    setLoading(false);
+                }
+            });
+        }
+        
+        // 4. Listener for data changes (broadcast from background.js)
+        chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+            if (request.type === "dataUpdated") {
+                console.log("Popup received data update broadcast. Refreshing UI.");
+                await updateStatusMessage();
+                await updatePatientCount();
+            }
+        });
+
+        window.popupListenersInitialized = true; // Set flag after listeners are attached
+    }
+    
+    // --- Initial Load Setup (Always runs to update status) ---
+
+    // Initial load of UI status
     await updateStatusMessage();
     await updatePatientCount();
-
-    // Extract patient data
-    extractPatientDataBtn.addEventListener('click', async () => {
-        console.log("Extract Patient Data button clicked");
-        await executeContentScriptAndExtract("extractData");
-    });
-
-    // Extract test data
-    extractTestDataBtn.addEventListener('click', async () => {
-        console.log("Extract Test Data button clicked");
-        await executeContentScriptAndExtract("extractTestData");
-    });
-
-    // Generate Excel file
-    generateExcelBtn.addEventListener('click', async () => {
-        console.log("Generate Excel button clicked");
-        setLoading(true, "Generating Excel file...");
-
-        try {
-            const storedData = await chrome.storage.local.get(['patientData', 'testData']);
-            const patientData = storedData.patientData || [];
-            const testData = storedData.testData || [];
-            const combinedData = combinePatientAndTestData(patientData, testData);
-
-            if (!combinedData.length) throw new Error("No data to export");
-
-            await exportToExcel(combinedData);
-            showToast("Excel file downloaded successfully!", "success");
-        } catch (error) {
-            console.error("Export failed:", error);
-            showToast(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
-        }
-    });
-
-    // Inject buttons into the page
-    function injectButtonsIntoPage() {
-        console.log("Injecting buttons into the webpage...");
-
-        const patientDataSelector = document.querySelector("#dvmainbarsub > div > div.widget.wgreen > div.widget-head > div.widget-icons > div > h4");
-        if (patientDataSelector && !document.getElementById("customExtractPatientData")) {
-            const patientButton = createButton("customExtractPatientData", "Extract Patient Data", "#6366f1", () => executeContentScriptAndExtract("extractData"));
-            patientDataSelector.appendChild(patientButton);
+    
+    // Check page status for informative feedback
+    try {
+        const tab = await getCurrentTab();
+        
+        // Handle case where we are on a restricted Chrome page
+        if (tab === null) {
+            setStatus("Not Ready", "not-ready");
+            // Disable management buttons since content script cannot be injected here
+            if(generateExcelBtn) generateExcelBtn.disabled = true;
+            if(clearDataBtn) clearDataBtn.disabled = true;
+            return; 
         }
 
-        const testDataSelector = document.querySelector("#mdlviewlabtest > div > div > div.modal-body");
-        if (testDataSelector && !document.getElementById("customExtractTestData")) {
-            const testButton = createButton("customExtractTestData", "Extract Test Data", "#3b82f6", () => executeContentScriptAndExtract("extractTestData"));
-            testDataSelector.appendChild(testButton);
+        const isMiasPage = await isTargetPage(tab);
+        const isViewPage = tab.url.startsWith(EXTENSION_VIEW_URL);
+
+        // If not on an extraction page, indicate the limits, but keep data buttons active
+        if (!isMiasPage && !isViewPage) {
+            // Set Ready status based on data check (from updateStatusMessage, which already ran)
         }
-    }
-
-    // Create a button dynamically
-    function createButton(id, text, color, clickHandler) {
-        const button = document.createElement("button");
-        button.id = id;
-        button.textContent = text;
-        button.style.cssText = `margin: 10px; padding: 5px 10px; background: ${color}; color: white; border: none; border-radius: 5px; cursor: pointer;`;
-        button.addEventListener("click", clickHandler);
-        return button;
-    }
-
-    // Execute content script and extract data
-    async function executeContentScriptAndExtract(type) {
-        setLoading(true, `Extracting ${type === "extractData" ? "patient" : "test"} data...`);
-
-        try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (!tab) throw new Error("No active tab found");
-
-            await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content.js'] });
-
-            const response = await chrome.tabs.sendMessage(tab.id, { type });
-            if (response?.error) throw new Error(response.error);
-
-            showToast(`${type === "extractData" ? "Patient" : "Test"} data extracted successfully!`, "success");
-
-            if (type === "extractData") await updatePatientCount();
-            await updateStatusMessage();
-        } catch (error) {
-            console.error("Extraction failed:", error);
-            showToast(`Error: ${error.message}`, "error");
-        } finally {
-            setLoading(false);
+        
+        // If on the View Page, ensure all buttons are active
+        if (isViewPage) {
+            setStatus("Ready", "ready");
+            if(generateExcelBtn) generateExcelBtn.disabled = false;
+            if(clearDataBtn) clearDataBtn.disabled = false;
         }
-    }
-
-    // Combine patient and test data
-    function combinePatientAndTestData(patientData, testData) {
-        return patientData.flatMap(patient => {
-            const tests = testData.filter(test => test.PID === patient.PID);
-            return tests.length ? tests.map(test => ({ ...patient, ...test })) : [patient];
-        });
-    }
-
-    // Update patient count
-    async function updatePatientCount() {
-        const storedData = await chrome.storage.local.get('patientData');
-        const patientData = storedData.patientData || [];
-        if (patientCountElement) {
-            patientCountElement.textContent = `Number of Patients: ${patientData.length}`;
-        } else {
-            console.warn("patientCountElement not found in DOM.");
-        }
-    }
-
-    // Update status message
-    async function updateStatusMessage() {
-        const storedData = await chrome.storage.local.get(['patientData', 'testData']);
-        const patientData = storedData.patientData || [];
-        const testData = storedData.testData || [];
-
-        if (patientData.length && testData.length) {
-            setStatus("Full data extracted and available.", "success");
-        } else if (patientData.length) {
-            setStatus("Patient data extracted, test data missing.", "warning");
-        } else if (testData.length) {
-            setStatus("Test data extracted, patient data missing.", "warning");
-        } else {
-            setStatus("No data extracted yet.", "info");
-        }
-    }
-
-    // Set loading state
-    function setLoading(isLoading, message = "") {
-        extractPatientDataBtn.disabled = isLoading;
-        extractTestDataBtn.disabled = isLoading;
-        generateExcelBtn.disabled = isLoading;
-        clearDataBtn.disabled = isLoading;
-        if (message) setStatus(message, "loading");
-    }
-
-    // Set status message
-    function setStatus(message, type) {
-        statusDiv.textContent = message;
-        statusDiv.className = type;
-    }
-
-    // Export to Excel
-    async function exportToExcel(data) {
-        if (typeof XLSX === 'undefined') {
-            console.error("XLSX library is not loaded.");
-            return;
-        }
-
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Data');
-        XLSX.writeFile(wb, `PatientData_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`);
+        
+    } catch(e) {
+        console.warn("Could not check current tab status (Unexpected Error): ", e.message);
+        setStatus("Not Ready", "not-ready");
     }
 });

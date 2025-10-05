@@ -1,76 +1,116 @@
-<div align="center">  
-  <img src="https://img.shields.io/badge/MIAS%20Suite-Chrome%20Extension-blue?style=for-the-badge&logo=google-chrome&logoColor=white" alt="MIAS Suite Badge">  
-  <h1>MIAS Suite - Chrome Extension</h1>  
-  <p>A powerful extension to extract, store, and manage biochemical test values efficiently.</p>  
-</div>  
+This is a great request\! To achieve a more attractive and advanced look, I'll incorporate modern README practices, including badges, stylized headers, and structured blockquotes for technical depth.
+
+Here is the enhanced and highly attractive README file for your project:
+
+-----
+
+````markdown
+# 🧪 Biochemical Data Extractor (MIAS Tool)
+
+<!-- BADGES -->
+![Version](https://img.shields.io/badge/Version-1.0-blue.svg)
+![Language](https://img.shields.io/badge/Language-JavaScript-yellow.svg)
+![Framework](https://img.shields.io/badge/Browser-Chrome%20MV3-red.svg)
+![License](https://img.shields.io/badge/License-UNLICENSED-lightgrey.svg)
 
 ---
 
-## 🚀 Overview  
-**MIAS Suite** is a **Chrome extension** designed to automate **biochemical test data extraction** from a password-protected medical website. It ensures **efficient storage**, **intelligent test panel handling**, and **seamless Excel export** while maintaining an intuitive UI/UX.  
+## 🌟 Overview
 
-🔹 **Extract patient and test data with one click**  
-🔹 **IndexedDB storage** for enhanced performance  
-🔹 **Hybrid data export** – Excel & Google Drive integration  
+A powerful and elegant Chrome Extension designed for high-efficiency data collection. The **Biochemical Data Extractor** seamlessly integrates with the MIAS hospital information system to scrape, persist, and transform complex patient test results into a unified, analyst-ready CSV format.
 
----
-
-## ✨ Features  
-
-### 🔍 Automated Data Extraction  
-✔️ Click **'Extract Patient Data'** to capture **Patient Name & PID**  
-✔️ Click **'Extract Test Data'** to extract **Test Name, Result Value & Approved On**  
-
-### 📂 Efficient Storage with IndexedDB  
-✔️ **Stores extracted data locally** for faster retrieval  
-✔️ **Prevents performance lag** with periodic data flushing  
-
-### 📊 Seamless Data Export & Google Drive Integration  
-✔️ Export test results as an **Excel file**  
-✔️ **Google Apps Script integration** for **direct upload to Google Drive** (avoiding CORS issues)  
-
-### 🖥 User-Friendly UI/UX  
-✔️ **Well-aligned buttons** for smooth workflow  
-✔️ **Live status updates & patient count display**  
+> 🎯 **Target Goal:** Transform hierarchical, multi-entry patient test data into a clean, pivoted, single-row structure, ready for direct analysis in Excel or statistical software.
 
 ---
 
-## 🛠 Installation Guide  
+## ✨ Core Features & Functionality
 
-1. **Clone this repository**  
-   ```bash
-   git clone https://github.com/yourusername/MIAS-Suite.git
-   ```
-2. **Open Chrome Extensions** (`chrome://extensions/`)  
-3. **Enable Developer Mode** (toggle at the top right)  
-4. **Click "Load Unpacked"** and select the cloned folder  
-5. **Extension is now ready to use! 🚀**  
-
----
-
-## 📖 Usage Guide  
-
-1️⃣ **Navigate to the medical website**  
-2️⃣ Click **'Extract Patient Data'** → Saves **Patient Name & PID**  
-3️⃣ Click **'Extract Test Data'** → Saves **Test Name, Result & Approved On**  
-4️⃣ **Data is securely stored in IndexedDB**  
-5️⃣ Export data as **Excel file** or **upload to Google Drive**  
+| Icon | Feature | Description |
+| :---: | :--- | :--- |
+| ⚡️ | **One-Click Extraction** | Uses a dynamically injected button and a **Spacebar** shortcut to capture individual test results from the target modal. |
+| 💾 | **IndexedDB Persistence** | Patient records and all associated tests are securely stored locally within the browser's Service Worker, ensuring data continuity. |
+| 🔄 | **Smart Merging** | Automatically updates patient demographics (Name, Age, PID) and prevents the saving of **duplicate test entries** based on matching (Test Name + Result + Date). |
+| 📊 | **Pivoted CSV Export** | The core data transformation: generates a wide-format CSV where unique biochemical tests are mapped to individual columns (e.g., `FBS`, `TSH`, `T.CHOL`). |
+| 🗑️ | **Granular Management** | A dedicated full-page view (`view.html`) allows users to monitor all collected data and perform **single-test deletion** or **full patient record removal**. |
+| 🔔 | **Elegant Feedback** | Non-intrusive toast notifications provide immediate status feedback (Success, Warning for Duplicates, Error) directly on the target page. |
 
 ---
 
-## 🤝 Contributing  
-🔹 Fork the repository & create a new branch  
-🔹 Open issues for **bugs or feature requests**  
-🔹 Submit a **pull request** with your enhancements  
+## 🚀 Installation & Setup
 
----
+### **1. Clone the Repository**
 
-## 📜 License  
-This project is licensed under the **MIT License**.  
+Clone the project files to your local machine:
 
----
+```bash
+git clone [https://github.com/YourUsername/biochemical-data-extractor.git](https://github.com/YourUsername/biochemical-data-extractor.git)
+cd biochemical-data-extractor
+````
 
-### 🎯 Future Improvements  
-🚀 Add **auto-scheduling** for periodic IndexedDB cleanup  
-🚀 Enhance **Google Drive file organization**  
-🚀 Implement **AI-based test result analysis**  
+### **2. Load as Unpacked Extension**
+
+1.  Open **Google Chrome** (or any Chromium-based browser).
+2.  Navigate to `chrome://extensions`.
+3.  Toggle **Developer mode** on (top right corner).
+4.  Click the **Load unpacked** button.
+5.  Select the **`biochemical-data-extractor`** directory.
+
+The **MIAS Tool** icon will now appear in your browser toolbar.
+
+-----
+
+## ⚙️ Technical Deep Dive
+
+The architecture ensures maximum reliability and efficiency by isolating concerns across files:
+
+### **`background.js` (Service Worker)**
+
+> The single source of truth for data persistence and heavy lifting. It ensures that the browser tab's status does not affect data operations.
+
+  * **Storage:** Manages IndexedDB connection, read, write, and delete operations.
+  * **Pivoting Logic:** Contains the sophisticated logic to flatten hierarchical `Patient { Tests: [...] }` data into a wide CSV format, dynamically determining necessary test columns.
+
+### **`content.js` (Injected Script)**
+
+> Handles the interaction with the target website's DOM and internal API.
+
+  * **Scraping:** Queries the DOM for test result details (`TestName`, `ResultValue`, `ApprovedOn`).
+  * **Profile Fetch:** Triggers patient demographic fetching by attaching a listener to the site's existing "View" buttons, intercepting an internal API call (`Casesheetview.aspx` handler) for the profile data.
+  * **Messaging:** Uses `chrome.runtime.sendMessage` to delegate all saving and persistent tasks to the Service Worker.
+
+### **`view.js` / `view.html` (Data Management Interface)**
+
+> A completely separate extension page (`chrome-extension://.../view.html`) for managing collected records.
+
+  * **Real-time Updates:** Listens for the `dataUpdated` event broadcast by the Service Worker, ensuring the table automatically refreshes when data is scraped on the target site or deleted on the View page.
+  * **Action Delegation:** All delete actions immediately message the Service Worker to perform the database modification, preventing direct DB access from the UI layer.
+
+-----
+
+## 👤 Author & Support
+
+A project by **Sundaresan Nithiyanandam**.
+
+\<div style="padding: 10px 20px; border: 1px solid \#1abc9c; border-radius: 8px; background-color: \#2c3e50; color: white;"\>
+\<h4\>📧 Connect:\</h4\>
+\<p\>If you encounter any issues, have feature requests, or want to discuss the code, please reach out\!\</p\>
+\<ul\>
+\<li\>
+\<strong\>LinkedIn:\</strong\>
+\<a href="[Insert your LinkedIn URL here]" target="\_blank" style="color: \#3498db; text-decoration: none;"\>[Your LinkedIn Profile Link]\</a\>
+\</li\>
+\<li\>
+\<strong\>GitHub:\</strong\>
+\<a href="[Insert your GitHub URL here]" target="\_blank" style="color: \#3498db; text-decoration: none;"\>[Your GitHub Profile Link]\</a\>
+\</li\>
+\</ul\>
+\</div\>
+
+-----
+
+\<p align="center"\>
+🚀 Data Extraction Simplified.
+\</p\>
+
+```
+```

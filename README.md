@@ -1,118 +1,88 @@
-🧪 Biochemical Data Extractor (MIAS Tool)
+# 🧪 Biochemical Data Extractor (MIAS Tool)
+
 <!-- BADGES -->
 
-🌟 Overview
-A powerful and elegant Chrome Extension designed for high-efficiency data collection. The Biochemical Data Extractor seamlessly integrates with the MIAS hospital information system to scrape, persist, and transform complex patient test results into a unified, analyst-ready CSV format.
+![License](https://img.shields.io/badge/license-MIT-green)
+![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue)
+![Status](https://img.shields.io/badge/status-Active-success)
 
-🎯 Target Goal: Transform hierarchical, multi-entry patient test data into a clean, pivoted, single-row structure, ready for direct analysis in Excel or statistical software.
+---
 
-✨ Core Features & Functionality
-Icon
+## 🌟 Overview
 
-Feature
+The **Biochemical Data Extractor (MIAS Tool)** is a powerful and elegant Chrome Extension designed for **high-efficiency data collection**.
 
-Description
+It seamlessly integrates with the **MIAS hospital information system** to scrape, persist, and transform complex patient test results into a **unified, analyst-ready CSV format**.
 
-⚡️
+**🎯 Target Goal:** Transform hierarchical, multi-entry patient test data into a clean, pivoted, single-row structure — ready for direct analysis in **Excel** or any **statistical software**.
 
-One-Click Extraction
+---
 
-Uses a dynamically injected button and a Spacebar shortcut to capture individual test results from the target modal.
+## ✨ Core Features & Functionality
 
-💾
+| Icon | Feature                   | Description                                                                                    |
+| ---- | ------------------------- | ---------------------------------------------------------------------------------------------- |
+| ⚡️   | **One-Click Extraction**  | Capture individual test results using an injected button or **Spacebar** shortcut.             |
+| 💾   | **IndexedDB Persistence** | Secure, local storage of patient records and test results using the Service Worker.            |
+| 🔄   | **Smart Merging**         | Prevents duplicate entries and auto-updates demographics (Name, Age, PID).                     |
+| 📊   | **Pivoted CSV Export**    | Converts data into wide-format CSV with unique tests as columns (e.g., FBS, TSH, T.CHOL).      |
+| 🗑️  | **Granular Management**   | Full-page view (`view.html`) for browsing, deleting single tests, or clearing patient records. |
+| 🔔   | **Elegant Feedback**      | Non-intrusive toast notifications (Success, Duplicate Warning, Error).                         |
 
-IndexedDB Persistence
+---
 
-Patient records and all associated tests are securely stored locally within the browser's Service Worker, ensuring data continuity.
+## 🚀 Installation & Setup
 
-🔄
+1. **Clone the Repository**
 
-Smart Merging
+   ```bash
+   git clone https://github.com/YourUsername/biochemical-data-extractor.git
+   cd biochemical-data-extractor
+   ```
 
-Automatically updates patient demographics (Name, Age, PID) and prevents the saving of duplicate test entries based on matching (Test Name + Result + Date).
+2. **Load as Unpacked Extension**
 
-📊
+   * Open Chrome (or any Chromium-based browser).
+   * Navigate to `chrome://extensions`.
+   * Enable **Developer mode** (top-right).
+   * Click **Load unpacked**.
+   * Select the `biochemical-data-extractor` folder.
+     ✅ The MIAS Tool icon will now appear in your browser toolbar.
 
-Pivoted CSV Export
+---
 
-The core data transformation: generates a wide-format CSV where unique biochemical tests are mapped to individual columns (e.g., FBS, TSH, T.CHOL).
+## ⚙️ Technical Deep Dive
 
-🗑️
+### `background.js` (Service Worker)
 
-Granular Management
+* Acts as the **single source of truth** for data persistence.
+* **Storage Layer:** Manages IndexedDB operations (read, write, delete).
+* **Pivoting Logic:** Flattens `Patient { Tests: [...] }` into wide CSV format with dynamically generated test columns.
 
-A dedicated full-page view (view.html) allows users to monitor all collected data and perform single-test deletion or full patient record removal.
+### `content.js` (Injected Script)
 
-🔔
+* Interfaces directly with the **MIAS system’s DOM and APIs**.
+* **Scraping:** Extracts test results (TestName, ResultValue, ApprovedOn).
+* **Profile Fetching:** Intercepts API calls (`Casesheetview.aspx`) to capture demographics.
+* **Messaging:** Relays test data to the Service Worker for persistence.
 
-Elegant Feedback
+### `view.js` / `view.html` (Data Management Interface)
 
-Non-intrusive toast notifications provide immediate status feedback (Success, Warning for Duplicates, Error) directly on the target page.
+* Provides a **standalone UI** for record management.
+* **Real-Time Updates:** Listens for `dataUpdated` events from the Service Worker.
+* **Action Delegation:** Delete requests are executed via messaging, preventing direct DB access from the UI.
 
-🚀 Installation & Setup
-1. Clone the Repository
-Clone the project files to your local machine:
+---
 
-git clone [https://github.com/YourUsername/biochemical-data-extractor.git](https://github.com/YourUsername/biochemical-data-extractor.git)
-cd biochemical-data-extractor
+## 👤 Author & Support
 
-2. Load as Unpacked Extension
-Open Google Chrome (or any Chromium-based browser).
+**Project by:** Sundaresan Nithiyanandam
 
-Navigate to chrome://extensions.
+📧 **Connect:**
 
-Toggle Developer mode on (top right corner).
+* **LinkedIn:** [Your LinkedIn Profile](https://www.linkedin.com/in/myselfsundar/)
+* **GitHub:** [Your GitHub Profile](https://github.com/drdroid7)
 
-Click the Load unpacked button.
+---
 
-Select the biochemical-data-extractor directory.
-
-The MIAS Tool icon will now appear in your browser toolbar.
-
-⚙️ Technical Deep Dive
-The architecture ensures maximum reliability and efficiency by isolating concerns across files:
-
-background.js (Service Worker)
-The single source of truth for data persistence and heavy lifting. It ensures that the browser tab's status does not affect data operations.
-
-Storage: Manages IndexedDB connection, read, write, and delete operations.
-
-Pivoting Logic: Contains the sophisticated logic to flatten hierarchical Patient { Tests: [...] } data into a wide CSV format, dynamically determining necessary test columns.
-
-content.js (Injected Script)
-Handles the interaction with the target website's DOM and internal API.
-
-Scraping: Queries the DOM for test result details (TestName, ResultValue, ApprovedOn).
-
-Profile Fetch: Triggers patient demographic fetching by attaching a listener to the site's existing "View" buttons, intercepting an internal API call (Casesheetview.aspx handler) for the profile data.
-
-Messaging: Uses chrome.runtime.sendMessage to delegate all saving and persistent tasks to the Service Worker.
-
-view.js / view.html (Data Management Interface)
-A completely separate extension page (chrome-extension://.../view.html) for managing collected records.
-
-Real-time Updates: Listens for the dataUpdated event broadcast by the Service Worker, ensuring the table automatically refreshes when data is scraped on the target site or deleted on the View page.
-
-Action Delegation: All delete actions immediately message the Service Worker to perform the database modification, preventing direct DB access from the UI layer.
-
-👤 Author & Support
-A project by Sundaresan Nithiyanandam.
-
-<div style="padding: 10px 20px; border: 1px solid #1abc9c; border-radius: 8px; background-color: #2c3e50; color: white;">
-<h4>📧 Connect:</h4>
-<p>If you encounter any issues, have feature requests, or want to discuss the code, please reach out!</p>
-<ul>
-<li>
-<strong>LinkedIn:</strong>
-<a href="[Insert your LinkedIn URL here]" target="_blank" style="color: #3498db; text-decoration: none;">[Your LinkedIn Profile Link]</a>
-</li>
-<li>
-<strong>GitHub:</strong>
-<a href="[Insert your GitHub URL here]" target="_blank" style="color: #3498db; text-decoration: none;">[Your GitHub Profile Link]</a>
-</li>
-</ul>
-</div>
-
-<p align="center">
-🚀 Data Extraction Simplified.
-</p>
+<p align="center"><b>🚀 Data Extraction Simplified.</b></p>

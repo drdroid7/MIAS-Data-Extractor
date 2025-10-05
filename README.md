@@ -31,6 +31,18 @@ It seamlessly integrates with the **MIAS hospital information system** to scrape
 
 ---
 
+## 🖼️ Screenshots
+🔹 Popup UI
+<img width="408" height="405" alt="image" src="https://github.com/user-attachments/assets/91ae68aa-d8ad-44bf-a5f7-6d012e298633" />
+
+*A quick access popup with controls for exporting data, viewing collected records, and clearing local storage.*
+
+🔹 Data Management (view.html)
+<img width="1920" height="839" alt="image" src="https://github.com/user-attachments/assets/bbde76ac-0c7c-427c-a336-363d9489b6ca" />
+
+*A full-page interface to view and manage all collected patient data.*
+
+
 ## 🚀 Installation & Setup
 
 1. **Clone the Repository**
